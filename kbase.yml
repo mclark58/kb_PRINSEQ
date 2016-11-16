@@ -2,7 +2,7 @@ module-name:
     kb_PRINSEQ
 
 module-description:
-    A KBase module
+    A KBase SDK module that wraps the low complexity filtering functionality of PRINSEQ
 
 service-language:
     python
