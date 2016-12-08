@@ -1,0 +1,146 @@
+{
+	"ver": "0.0.12",
+	
+	"authors": [
+		"jkbaumohl"
+	],
+	"contact": "help@kbase.us",
+	"visible": true,
+	"categories": ["active", "reads" ],
+	"widgets": {
+		"input": null,
+		"output": "kbaseReportView"
+	},
+	"parameters": [
+		{
+			"id": "read_type",
+			"optional": false,
+			"advanced": false,
+			"allow_multiple": false,
+			"default_values": [ "PE" ],
+			"field_type": "dropdown",
+			"dropdown_options": {
+				"options": [
+					{
+						"value": "PE",
+						"display": "Paired End",
+						"id": "PE",
+						"ui-name": "PE"
+					},
+					{
+						"value": "SE",
+						"display": "Single End",
+						"id": "SE",
+						"ui-name": "SE"
+					}
+				]
+			}
+		},
+		{
+			"id": "input_reads_ref",
+			"optional": false,
+			"advanced": false,
+			"allow_multiple": false,
+			"default_values": [ "" ],
+			"field_type": "text",
+			"text_options": {
+				"valid_ws_types": ["KBaseFile.PairedEndLibrary", "KBaseAssembly.PairedEndLibrary", "KBaseAssembly.SingleEndLibrary", "KBaseFile.SingleEndLibrary"]
+			}
+		},
+		{
+			"id": "output_reads_name",
+			"optional": false,
+			"advanced": false,
+			"allow_multiple": false,
+			"default_values": [ "" ],
+			"field_type": "text",
+			"text_options": {
+				"valid_ws_types": ["KBaseFile.PairedEndLibrary", "KBaseFile.SingleEndLibrary"],
+				"is_output_name": true
+			}
+		},
+		{
+			"id": "lc_method",
+			"optional": false,
+			"advanced": false,
+			"allow_multiple": false,
+			"default_values": [ "entropy" ],
+			"field_type": "dropdown",
+				"dropdown_options": {
+					"options": [
+						{
+							"value": "entropy",
+							"display": "entropy",
+							"id": "entrooy",
+							"ui-name": "entropy"
+						},
+						{
+							"value": "dust",
+							"display": "dust",
+							"id": "dust",
+							"ui-name": "dust"
+						}
+					]
+				}
+		},
+		{
+			"id": "lc_threshold",
+			"optional": false,
+			"advanced": false,
+			"allow_multiple": false,
+			"field_type": "text",
+			"text_options": {
+				"validate_as": "int",
+                "min_int": 0,
+                "max_int": 100
+			}
+		}
+	],
+	"behavior": {
+		"service-mapping": {
+			"url": "",
+			"name": "kb_PRINSEQ",
+			"method": "execReadLibraryPRINSEQ",
+			"input_mapping": [
+				{
+					"narrative_system_variable": "workspace",
+					"target_property": "input_ws"
+				},
+				{
+					"input_parameter": "input_reads_ref",
+					"target_property": "input_reads_ref",
+					"target_type_transform": "resolved-ref"
+
+				},
+				{
+					"input_parameter": "output_reads_name",
+					"target_property": "output_reads_name"
+
+				},
+				{
+					"input_parameter": "lc_method",
+					"target_property": "lc_method"
+				},
+				{
+					"input_parameter": "lc_threshold",
+					"target_property": "lc_threshold"
+				}
+			],
+			"output_mapping": [
+				{
+					"service_method_output_path": [0, "report_name"],
+					"target_property": "report_name"
+				},
+				{
+					"service_method_output_path": [0, "report_ref"],
+					"target_property": "report_ref"
+				},
+				{
+					"narrative_system_variable": "workspace",
+					"target_property": "workspace_name"
+				}
+			]
+		}
+	},
+	"job_id_output_field": "docker"
+}

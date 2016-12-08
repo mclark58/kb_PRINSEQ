@@ -1,0 +1,72 @@
+#
+#  define display information
+#
+name: PRINSEQ - Low complexity read filtering
+tooltip: |
+	Filter out low complexity paired- or single-end reads with PRINSEQ.
+screenshots: []
+
+icon: prinseq_logo1.png
+
+#
+# define a set of similar methods that might be useful to the user
+#
+suggestions:
+	apps:
+		related:
+			[]
+		next:
+			[]
+	methods:
+		related:
+			[]
+		next:
+			[]
+
+#
+# Configure the display and description of parameters
+#
+parameters :
+	input_reads_ref :
+		ui-name : |
+			Read library (Single or Paired End) object
+		short-hint : |
+			The read library to examine
+		long-hint  : |
+			The read library (Single or Paired End) for which you want to perform PRINSEQ low complexity filtering on.
+	output_reads_name :
+		ui-name : |
+			Output library name
+		short-hint : |
+			Base name for output read library object
+		long-hint : |
+			Base name for output read library object
+	lc_method :
+		ui-name : |
+			Low Complexity Filtering Method
+		short-hint : |
+			Low Complexity Filtering Method (dust or entropy)
+		long-hint : |
+			Low Complexity Filtering Method (dust (low threshold values are stricter) or entropy (high threshold values are stricter))
+	lc_threshold : 
+		ui-name : |
+			Low Complexity Threshold (int from 0 to 100)
+		short-hint : |
+			Low Complexity Threshold (int from 0 to 100)
+		long-hint : |
+			Low Complexity Threshold (int from 0 to 100). In dust a low threshold value is stricter. In entropy a high threshold value is stricter.
+
+# Desc
+#
+description : |
+	<p>This uses the PRINSEQ functionality to filter reads from reads files based on their ow complexity.
+
+publications :
+    -
+        pmid: 21278185
+        display-text : |
+            'Schmieder R and Edwards R: Quality control and preprocessing of metagenomic datasets. Bioinformatics 2011, 27:863-864.'
+        link: http://www.ncbi.nlm.nih.gov/pubmed/21278185
+    -
+    	link: http://prinseq.sourceforge.net/
+
