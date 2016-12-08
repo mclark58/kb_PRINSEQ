@@ -1,5 +1,25 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
+import sys
+import traceback
+from biokbase.workspace.client import Workspace as workspaceService
+#from Workspace.baseclient import ServerError as WorkspaceError
+import requests
+requests.packages.urllib3.disable_warnings()
+import subprocess
+import os
+import tempfile
+import shutil
+import re
+from pprint import pprint, pformat
+import uuid
+import shlex
+
+## SDK Utils
+#from ReadsUtils.ReadsUtilsClient import ReadsUtilsClient  # FIX
+from ReadsUtils.ReadsUtilsClient import ReadsUtils
+#from SetAPI.SetAPIClient import SetAPI
+#from KBaseReport.KBaseReportClient import KBaseReport
 #END_HEADER
 
 
@@ -10,6 +30,12 @@ class kb_PRINSEQ:
 
     Module Description:
     A KBase module: kb_PRINSEQ
+
+This module contains 1 method:
+
+runPRINSEQ() to a backend KBase App, potentially operating on ReadSets as well - Middle man from Narrative UI to wrapper call
+execPRINSEQ() to local method that handle s overloading PRINSEQ to run on to run on a set or a single library
+execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Reads object (Single End or Paired end)
     '''
 
     ######## WARNING FOR GEVENT USERS ####### noqa
@@ -19,18 +45,391 @@ class kb_PRINSEQ:
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.0.1"
-    GIT_URL = ""
-    GIT_COMMIT_HASH = ""
+    GIT_URL = "https://github.com/jkbaumohl/kb_PRINSEQ.git"
+    GIT_COMMIT_HASH = "ed90d1abc064d4a58c7829796d6df56666a2669b"
 
     #BEGIN_CLASS_HEADER
+    def _sanitize_file_name(self, file_name):
+        str = file_name.split(".")
+        return ('_'.join(str[0:-1])) + "." + str[-1]
+
+    def _strip_file_type_from_name(self, file_name):
+        str = file_name.split(".")
+        return str[0]
+
+    def _log(self, target, message):
+        if target is not None:
+            target.append(message)
+        print(message)
+        sys.stdout.flush()
     #END_CLASS_HEADER
 
     # config contains contents of config file in a hash or None if it couldn't
     # be found
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
+        self.scratch = config['scratch']
+        self.callback_url = os.environ['SDK_CALLBACK_URL']
+        self.ws_url = config['workspace-url']
         #END_CONSTRUCTOR
         pass
+
+    def execReadLibraryPRINSEQ(self, ctx, input_params):
+        """
+        :param input_params: instance of type "inputPRINSEQ" (execPRINSEQ and
+           execReadLibraryPRINSEQ input input_reads_ref : may be
+           KBaseFile.PairedEndLibrary or KBaseFile.SingleEndLibrary output_ws
+           : workspace to write to output_reads_name : obj_name to create
+           lc_method : Low complexity method - value must be "dust" or
+           "entropy" lc_threshold : Low complexity threshold - Value must be
+           an integer between 0 and 100. Note a higher lc_threshold in
+           entropy is more stringent. Note a lower lc_threshold is less
+           stringent with dust) -> structure: parameter "input_reads_ref" of
+           type "data_obj_ref", parameter "output_ws" of type
+           "workspace_name" (Common Types), parameter "output_reads_name" of
+           type "data_obj_name", parameter "lc_method" of String, parameter
+           "lc_threshold" of Long
+        :returns: instance of type "outputReadLibraryExecPRINSEQ" ->
+           structure: parameter "output_filtered_ref" of type "data_obj_ref",
+           parameter "output_unpaired_fwd_ref" of type "data_obj_ref",
+           parameter "output_unpaired_rev_ref" of type "data_obj_ref",
+           parameter "report" of String
+        """
+        # ctx is the context object
+        # return variables are: returnVal
+        #BEGIN execReadLibraryPRINSEQ
+        console = []
+#        self.log(console, 'Running execTrimmomatic with parameters: ')
+#        self.log(console, "\n"+pformat(input_params))
+        report = ''
+        returnVal = dict()
+#        retVal['output_filtered_ref'] = None
+#        retVal['output_unpaired_fwd_ref'] = None
+#        retVal['output_unpaired_rev_ref'] = None
+
+        token = ctx['token']
+        wsClient = workspaceService(self.ws_url, token=token)
+        headers = {'Authorization': 'OAuth ' + token}
+        env = os.environ.copy()
+        env['KB_AUTH_TOKEN'] = token
+
+        # param checks
+        required_params = ['input_reads_ref',
+                           'output_ws',
+                           'lc_method',
+                           'lc_threshold']
+        # output reads_name is optional. If not set will use old_objects name
+        for required_param in required_params:
+            if required_param not in input_params or input_params[required_param] is None:
+                raise ValueError("Must define required param: '" + required_param + "'")
+
+        if (input_params['lc_method'] != 'dust') and (input_params['lc_method'] != 'entropy'):
+            raise ValueError("lc_method (low complexity method) must be 'dust' or 'entropy', " +
+                             "it is currently set to : " +
+                             input_params['lc_method'])
+
+        if (input_params['lc_threshold'] < 0.0) or (input_params['lc_threshold'] > 100.0):
+            raise ValueError("lc_threshold must be between 0 and 100, " +
+                             "it is currently set to : " +
+                             input_params['lc_threshold'])
+
+        reportObj = {'objects_created': [],
+                     'text_message': ''}
+
+        # load provenance
+        provenance = [{}]
+        if 'provenance' in ctx:
+            provenance = ctx['provenance']
+        # add additional info to provenance here, in this case the input data object reference
+        provenance[0]['input_ws_objects'] = [str(input_params['input_reads_ref'])]
+
+        # GET THE READS OBJECT
+        # Determine whether read library or read set is input object
+        #
+        try:
+            # object_info tuple
+            [OBJID_I, NAME_I, TYPE_I, SAVE_DATE_I, VERSION_I, SAVED_BY_I, WSID_I,
+             WORKSPACE_I, CHSUM_I, SIZE_I, META_I] = range(11)
+
+            input_reads_obj_info = wsClient.get_object_info_new({'objects':
+                                                                 [{'ref':
+                                                                   input_params['input_reads_ref']
+                                                                   }]})[0]
+            input_reads_obj_type = input_reads_obj_info[TYPE_I]
+            # input_reads_obj_version = input_reads_obj_info[VERSION_I]
+            # this is object version, not type version
+
+        except Exception as e:
+            raise ValueError('Unable to get read library object from workspace: (' +
+                             str(input_params['input_reads_ref']) + ')' + str(e))
+
+        # self.log (console, "B4 TYPE: '" +
+        #           str(input_reads_obj_type) +
+        #           "' VERSION: '" + str(input_reads_obj_version)+"'")
+        # remove trailing version
+        input_reads_obj_type = re.sub('-[0-9]+\.[0-9]+$', "", input_reads_obj_type)
+        # self.log (console, "AF TYPE: '"+str(input_reads_obj_type)+"' VERSION: '" +
+        # str(input_reads_obj_version)+"'")
+
+        # maybe add below later "KBaseSets.ReadsSet",
+        acceptable_types = ["KBaseFile.PairedEndLibrary",
+                            "KBaseAssembly.PairedEndLibrary",
+                            "KBaseAssembly.SingleEndLibrary",
+                            "KBaseFile.SingleEndLibrary"]
+        if input_reads_obj_type not in acceptable_types:
+            raise ValueError("Input reads of type: '" + input_reads_obj_type +
+                             "'.  Must be one of " + ", ".join(acceptable_types))
+
+        if input_reads_obj_type in ["KBaseFile.PairedEndLibrary", "KBaseAssembly.PairedEndLibrary"]:
+            read_type = 'PE'
+        elif input_reads_obj_type in ["KBaseFile.SingleEndLibrary",
+                                      "KBaseAssembly.SingleEndLibrary"]:
+            read_type = 'SE'
+
+        # Instatiate ReadsUtils
+        try:
+            readsUtils_Client = ReadsUtils(url=self.callback_url, token=ctx['token'])  # SDK local
+            self._log(None, 'Starting Read File(s) Download')
+            readsLibrary = readsUtils_Client.download_reads({'read_libraries':
+                                                            [input_params['input_reads_ref']],
+                                                             'interleaved': 'false'
+                                                             })
+            self._log(None, 'Completed Read File(s) Downloading')
+        except Exception as e:
+            raise ValueError(('Unable to get read library object from workspace: ({})\n')
+                             .format(str(input_params['input_reads_ref']), str(e)))
+
+        # get WS metadata to get obj_name
+        ws = workspaceService(self.ws_url)
+        try:
+            info = ws.get_object_info_new({'objects':
+                                          [{'ref': input_params['input_reads_ref']}]})[0]
+        except workspaceService as wse:
+            self._log(console, 'Logging workspace exception')
+            self._log(str(wse))
+            raise
+
+        #determine new object base name
+        new_object_name = info[1]
+        if('output_reads_name' in input_params and
+           input_params['output_reads_name'] != '' and
+           input_params['output_reads_name'] is not None):
+            new_object_name = input_params['output_reads_name']
+
+        # MAKE A DIRECTORY TO PUT THE READ FILE(S)
+        # create the output directory and move the file there
+        # PUT FILES INTO THE DIRECTORY
+        # Sanitize the file names
+        tempdir = tempfile.mkdtemp(dir=self.scratch)
+        export_dir = os.path.join(tempdir, info[1])
+        os.makedirs(export_dir)
+
+        sequencing_tech = readsLibrary['files'][input_params['input_reads_ref']]['sequencing_tech']
+
+        if read_type == 'PE':
+            # IF PAIRED END, potentially 6 files created
+            # one of each for the two directions(good(paired), good_singletons, bad)
+            # Take the good paired and (re)upload new reads object.
+            # We throwout the bad reads
+
+            # Download reads Libs to FASTQ files
+            input_fwd_file_path = \
+                readsLibrary['files'][input_params['input_reads_ref']]['files']['fwd']
+            fastq_filename = self._sanitize_file_name(os.path.basename(input_fwd_file_path))
+            fastq_file_path = os.path.join(export_dir, fastq_filename)
+            shutil.move(input_fwd_file_path, fastq_file_path)
+            input_rev_file_path = \
+                readsLibrary['files'][input_params['input_reads_ref']]['files']['rev']
+            fastq2_filename = self._sanitize_file_name(os.path.basename(input_rev_file_path))
+            fastq2_file_path = os.path.join(export_dir, fastq2_filename)
+            shutil.move(input_rev_file_path, fastq2_file_path)
+
+            # RUN PRINSEQ with user options (lc_method and lc_threshold)
+            cmd = ("perl /opt/lib/prinseq-lite-0.20.4/prinseq-lite.pl -fastq {} "
+                   "-fastq2 {} -out_format 3 -lc_method {} "
+                   "-lc_threshold {}").format(fastq_file_path,
+                                              fastq2_file_path,
+                                              input_params['lc_method'],
+                                              input_params['lc_threshold'])
+            print "Command to be run : " + cmd
+            args = shlex.split(cmd)
+            print "ARGS:  " + str(args)
+            perl_script = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output = perl_script.communicate()
+            print "OUTPUT: " + str(output) 
+            found_results = False
+            stripped_fastq_name = "{}_".format(self._strip_file_type_from_name(fastq_filename))
+            stripped_fastq2_name = "{}_".format(self._strip_file_type_from_name(fastq2_filename))
+            file_names_dict = dict()
+            for element in output:
+                if "Input and filter stats:" in element:
+                    found_results = True
+                    element_parts = element.split("Input and filter stats:")
+                    # PRINSEQ OUTPUT
+                    report = "Input and filter stats:{}".format(element_parts[1])
+                    reportObj['text_message'] = report
+                    read_files_list = os.listdir(export_dir)
+
+                    proc = subprocess.Popen(['ls', '-l', export_dir], stdout=subprocess.PIPE)
+                    proc_output = proc.stdout.read()
+                    print "PROC OUTPUT : " + proc_output
+
+                    for read_filename in read_files_list:
+                        file_direction = None
+                        print "Read File : {}".format(read_filename)
+                        # determine if forward(fastq) or reverse(fastq2) file
+                        if stripped_fastq_name in read_filename:
+                            file_direction = "fwd"
+                        elif stripped_fastq2_name in read_filename:
+                            file_direction = "rev"
+                        if file_direction is not None:
+                            # determine good singleton or good part of a pair.
+                            print "TEST: {}_prinseq_good_".format(stripped_fastq_name)
+                            if ("{}prinseq_good_singletons".format(stripped_fastq_name)
+                                    in read_filename or
+                                    "{}prinseq_good_singletons".format(stripped_fastq2_name)
+                                    in read_filename):
+                                # Unpaired singletons that need to be
+                                # saved as a new single end reads object
+                                file_names_dict["{}_good_singletons".format(file_direction)] = \
+                                    os.path.join(export_dir, read_filename)
+                            elif ("{}prinseq_good_".format(stripped_fastq_name) in read_filename or
+                                  "{}prinseq_good_".format(stripped_fastq2_name) in read_filename):
+                                file_names_dict["{}_good_pair".format(file_direction)] = \
+                                    os.path.join(export_dir, read_filename)
+                    if (('fwd_good_pair' in file_names_dict) and
+                            ('rev_good_pair' in file_names_dict)):
+                        self._log(None, 'Saving new Paired End Reads')
+                        returnVal['filtered_paired_end_ref'] = \
+                            readsUtils_Client.upload_reads({'wsname':
+                                                            str(input_params['output_ws']),
+                                                            'name': new_object_name,
+                                                            'sequencing_tech': sequencing_tech,
+                                                            'fwd_file':
+                                                            file_names_dict['fwd_good_pair'],
+                                                            'rev_file':
+                                                                file_names_dict['rev_good_pair']
+                                                            }
+                                                           )['obj_ref']
+                        reportObj['objects_created'].append({'ref':
+                                                             returnVal['filtered_paired_end_ref'],
+                                                             'description':
+                                                             'Filtered Paired End Reads'})
+                        print "REFERENCE : " + str(returnVal['filtered_paired_end_ref'])
+                    else:
+                        reportObj['text_message'] += \
+                            "\n\nNo good matching pairs passed low complexity filtering.\n"
+                    if 'fwd_good_singletons' in file_names_dict:
+                        self._log(None, 'Saving new Forward Unpaired Reads')
+                        returnVal['output_filtered_fwd_unpaired_end_ref'] = \
+                            readsUtils_Client.upload_reads({'wsname':
+                                                            str(input_params['output_ws']),
+                                                            'name':
+                                                            "{}_fwd_singletons".format(
+                                                                new_object_name),
+                                                            'sequencing_tech':
+                                                            sequencing_tech,
+                                                            'fwd_file':
+                                                            file_names_dict['fwd_good_singletons']}
+                                                           )['obj_ref']
+                        reportObj['objects_created'].append(
+                            {'ref': returnVal['output_filtered_fwd_unpaired_end_ref'],
+                             'description': 'Filtered Forward Unpaired End Reads'})
+                        print "REFERENCE : " + str(returnVal['output_filtered_fwd_unpaired_end_ref'])
+                    if 'rev_good_singletons' in file_names_dict:
+                        self._log(None, 'Saving new Reverse Unpaired Reads')
+                        returnVal['output_filtered_rev_unpaired_end_ref'] = \
+                            readsUtils_Client.upload_reads({'wsname':
+                                                            str(input_params['output_ws']),
+                                                            'name':
+                                                            "{}_rev_singletons".format(
+                                                                new_object_name),
+                                                            'sequencing_tech':
+                                                            sequencing_tech,
+                                                            'fwd_file':
+                                                            file_names_dict['rev_good_singletons']}
+                                                           )['obj_ref']
+                        reportObj['objects_created'].append(
+                            {'ref': returnVal['output_filtered_rev_unpaired_end_ref'],
+                             'description': 'Filtered Reverse Unpaired End Reads'})
+                        print "REFERENCE : " + str(returnVal['output_filtered_rev_unpaired_end_ref'])
+
+            if not found_results:
+                raise Exception('Unable to execute PRINSEQ, Error: {}'.format(str(output)))
+            print "FILES DICT : {}".format(str(file_names_dict))
+            print "REPORT OBJECT :"
+            print str(reportObj)
+#        raise ValueError('OUTPUT : ' + str(output))
+
+        elif read_type == 'SE':
+            # Download reads Libs to FASTQ files
+            # IF SINGLE END INPUT 2 files created (good and bad)
+            # Take good and (re)upload new reads object
+            input_fwd_file_path = \
+                readsLibrary['files'][input_params['input_reads_ref']]['files']['fwd']
+            fastq_filename = self._sanitize_file_name(os.path.basename(input_fwd_file_path))
+            fastq_file_path = os.path.join(export_dir, fastq_filename)
+            shutil.move(input_fwd_file_path, fastq_file_path)
+
+            # RUN PRINSEQ with user options (lc_method and lc_threshold)
+            cmd = ("perl /opt/lib/prinseq-lite-0.20.4/prinseq-lite.pl -fastq {} "
+                   "-out_format 3 -lc_method {} "
+                   "-lc_threshold {}").format(fastq_file_path,
+                                              input_params['lc_method'],
+                                              input_params['lc_threshold'])
+            print "Command to be run : " + cmd
+            args = shlex.split(cmd)
+            print "ARGS:  " + str(args)
+            perl_script = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output = perl_script.communicate()
+            print "OUTPUT: " + str(output)
+            found_results = False
+            stripped_fastq_name = "{}_".format(self._strip_file_type_from_name(fastq_filename))
+            file_names_dict = dict()
+            for element in output:
+                if "Input and filter stats:" in element:
+                    found_results = True
+                    element_parts = element.split("Input and filter stats:")
+                    # PRINSEQ OUTPUT
+                    report = "Input and filter stats:{}".format(element_parts[1])
+                    reportObj['text_message'] = report
+                    read_files_list = os.listdir(export_dir)
+
+                    for read_filename in read_files_list:
+                        print "Early Read File : {}".format(read_filename)
+
+                    for read_filename in read_files_list:
+                        print "Read File : {}".format(read_filename)
+                        if ("{}prinseq_good_".format(stripped_fastq_name) in read_filename):
+                            #Found Good file. Save the Reads objects
+                            self._log(None, 'Saving Filtered Single End Reads')
+                            returnVal['output_filtered_single_end_ref'] = \
+                                readsUtils_Client.upload_reads({'wsname':
+                                                                str(input_params['output_ws']),
+                                                                'name': new_object_name,
+                                                                'sequencing_tech':
+                                                                sequencing_tech,
+                                                                'fwd_file': os.path.join(export_dir, read_filename)}
+                                                               )['obj_ref']
+                            reportObj['objects_created'].append(
+                                {'ref': returnVal['output_filtered_single_end_ref'],
+                                 'description': 'Filtered Single End Reads'})
+                            print "REFERENCE : " + str(returnVal['output_filtered_single_end_ref'])
+                            break
+            if not found_results:
+                raise Exception('Unable to execute PRINSEQ, Error: {}'.format(str(output)))
+            print "FILES DICT : {}".format(str(file_names_dict))
+            print "REPORT OBJECT :"
+            print str(reportObj)
+
+        #END execReadLibraryPRINSEQ
+
+        # At some point might do deeper type checking...
+        if not isinstance(returnVal, dict):
+            raise ValueError('Method execReadLibraryPRINSEQ return value ' +
+                             'returnVal is not type dict as required.')
+        # return the results
+        return [returnVal]
 
     def status(self, ctx):
         #BEGIN_STATUS

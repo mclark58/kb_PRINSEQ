@@ -11,11 +11,16 @@ import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientCaller;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.RpcContext;
+import us.kbase.common.service.UnauthorizedException;
 
 /**
  * <p>Original spec-file module name: kb_PRINSEQ</p>
  * <pre>
  * A KBase module: kb_PRINSEQ
+ * This module contains 1 method:
+ * runPRINSEQ() to a backend KBase App, potentially operating on ReadSets as well - Middle man from Narrative UI to wrapper call
+ * execPRINSEQ() to local method that handle s overloading PRINSEQ to run on to run on a set or a single library
+ * execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Reads object (Single End or Paired end)
  * </pre>
  */
 public class KbPRINSEQClient {
@@ -28,6 +33,49 @@ public class KbPRINSEQClient {
      */
     public KbPRINSEQClient(URL url) {
         caller = new JsonClientCaller(url);
+    }
+    /** Constructs a client with a custom URL.
+     * @param url the URL of the service.
+     * @param token the user's authorization token.
+     * @throws UnauthorizedException if the token is not valid.
+     * @throws IOException if an IOException occurs when checking the token's
+     * validity.
+     */
+    public KbPRINSEQClient(URL url, AuthToken token) throws UnauthorizedException, IOException {
+        caller = new JsonClientCaller(url, token);
+    }
+
+    /** Constructs a client with a custom URL.
+     * @param url the URL of the service.
+     * @param user the user name.
+     * @param password the password for the user name.
+     * @throws UnauthorizedException if the credentials are not valid.
+     * @throws IOException if an IOException occurs when checking the user's
+     * credentials.
+     */
+    public KbPRINSEQClient(URL url, String user, String password) throws UnauthorizedException, IOException {
+        caller = new JsonClientCaller(url, user, password);
+    }
+
+    /** Constructs a client with a custom URL
+     * and a custom authorization service URL.
+     * @param url the URL of the service.
+     * @param user the user name.
+     * @param password the password for the user name.
+     * @param auth the URL of the authorization server.
+     * @throws UnauthorizedException if the credentials are not valid.
+     * @throws IOException if an IOException occurs when checking the user's
+     * credentials.
+     */
+    public KbPRINSEQClient(URL url, String user, String password, URL auth) throws UnauthorizedException, IOException {
+        caller = new JsonClientCaller(url, user, password, auth);
+    }
+
+    /** Get the token this client uses to communicate with the server.
+     * @return the authorization token.
+     */
+    public AuthToken getToken() {
+        return caller.getToken();
     }
 
     /** Get the URL of the service with which this client communicates.
@@ -116,6 +164,23 @@ public class KbPRINSEQClient {
 
     public void setServiceVersion(String newValue) {
         this.serviceVersion = newValue;
+    }
+
+    /**
+     * <p>Original spec-file function name: execReadLibraryPRINSEQ</p>
+     * <pre>
+     * </pre>
+     * @param   inputParams   instance of type {@link us.kbase.kbprinseq.InputPRINSEQ InputPRINSEQ} (original type "inputPRINSEQ")
+     * @return   instance of type {@link us.kbase.kbprinseq.OutputReadLibraryExecPRINSEQ OutputReadLibraryExecPRINSEQ} (original type "outputReadLibraryExecPRINSEQ")
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public OutputReadLibraryExecPRINSEQ execReadLibraryPRINSEQ(InputPRINSEQ inputParams, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(inputParams);
+        TypeReference<List<OutputReadLibraryExecPRINSEQ>> retType = new TypeReference<List<OutputReadLibraryExecPRINSEQ>>() {};
+        List<OutputReadLibraryExecPRINSEQ> res = caller.jsonrpcCall("kb_PRINSEQ.execReadLibraryPRINSEQ", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
     }
 
     public Map<String, Object> status(RpcContext... jsonRpcContext) throws IOException, JsonClientException {
