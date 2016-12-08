@@ -13,30 +13,6 @@
 	},
 	"parameters": [
 		{
-			"id": "read_type",
-			"optional": false,
-			"advanced": false,
-			"allow_multiple": false,
-			"default_values": [ "PE" ],
-			"field_type": "dropdown",
-			"dropdown_options": {
-				"options": [
-					{
-						"value": "PE",
-						"display": "Paired End",
-						"id": "PE",
-						"ui-name": "PE"
-					},
-					{
-						"value": "SE",
-						"display": "Single End",
-						"id": "SE",
-						"ui-name": "SE"
-					}
-				]
-			}
-		},
-		{
 			"id": "input_reads_ref",
 			"optional": false,
 			"advanced": false,
