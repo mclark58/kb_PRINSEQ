@@ -19,7 +19,7 @@ import shlex
 #from ReadsUtils.ReadsUtilsClient import ReadsUtilsClient  # FIX
 from ReadsUtils.ReadsUtilsClient import ReadsUtils
 #from SetAPI.SetAPIClient import SetAPI
-#from KBaseReport.KBaseReportClient import KBaseReport
+from KBaseReport.KBaseReportClient import KBaseReport
 #END_HEADER
 
 
@@ -421,6 +421,14 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
             print "FILES DICT : {}".format(str(file_names_dict))
             print "REPORT OBJECT :"
             print str(reportObj)
+
+        # save report object
+        #
+        report = KBaseReport(self.callback_url, token=ctx['token'])
+        #report = KBaseReport(self.callback_url, token=ctx['token'], service_ver=SERVICE_VER)
+        report_info = report.create({'report':reportObj, 'workspace_name':input_params['output_ws']})
+
+        output = { 'report_name': report_info['name'], 'report_ref': report_info['ref'] }
 
         #END execReadLibraryPRINSEQ
 
