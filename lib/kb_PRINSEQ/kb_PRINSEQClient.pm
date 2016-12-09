@@ -117,7 +117,7 @@ sub new
 
 =head2 execReadLibraryPRINSEQ
 
-  $return = $obj->execReadLibraryPRINSEQ($input_params)
+  $output = $obj->execReadLibraryPRINSEQ($input_params)
 
 =over 4
 
@@ -127,7 +127,7 @@ sub new
 
 <pre>
 $input_params is a kb_PRINSEQ.inputPRINSEQ
-$return is a kb_PRINSEQ.outputReadLibraryExecPRINSEQ
+$output is a kb_PRINSEQ.outputReadLibraryExecPRINSEQ
 inputPRINSEQ is a reference to a hash where the following keys are defined:
 	input_reads_ref has a value which is a kb_PRINSEQ.data_obj_ref
 	output_ws has a value which is a kb_PRINSEQ.workspace_name
@@ -150,7 +150,7 @@ outputReadLibraryExecPRINSEQ is a reference to a hash where the following keys a
 =begin text
 
 $input_params is a kb_PRINSEQ.inputPRINSEQ
-$return is a kb_PRINSEQ.outputReadLibraryExecPRINSEQ
+$output is a kb_PRINSEQ.outputReadLibraryExecPRINSEQ
 inputPRINSEQ is a reference to a hash where the following keys are defined:
 	input_reads_ref has a value which is a kb_PRINSEQ.data_obj_ref
 	output_ws has a value which is a kb_PRINSEQ.workspace_name

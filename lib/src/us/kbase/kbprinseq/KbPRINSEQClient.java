@@ -171,7 +171,7 @@ public class KbPRINSEQClient {
      * <pre>
      * </pre>
      * @param   inputParams   instance of type {@link us.kbase.kbprinseq.InputPRINSEQ InputPRINSEQ} (original type "inputPRINSEQ")
-     * @return   instance of type {@link us.kbase.kbprinseq.OutputReadLibraryExecPRINSEQ OutputReadLibraryExecPRINSEQ} (original type "outputReadLibraryExecPRINSEQ")
+     * @return   parameter "output" of type {@link us.kbase.kbprinseq.OutputReadLibraryExecPRINSEQ OutputReadLibraryExecPRINSEQ} (original type "outputReadLibraryExecPRINSEQ")
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */

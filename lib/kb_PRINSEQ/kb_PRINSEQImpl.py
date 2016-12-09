@@ -46,7 +46,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/jkbaumohl/kb_PRINSEQ.git"
-    GIT_COMMIT_HASH = "ed90d1abc064d4a58c7829796d6df56666a2669b"
+    GIT_COMMIT_HASH = "a58d989342c9446628e850eab532c7967bdb2361"
 
     #BEGIN_CLASS_HEADER
     def _sanitize_file_name(self, file_name):
@@ -74,6 +74,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         #END_CONSTRUCTOR
         pass
 
+
     def execReadLibraryPRINSEQ(self, ctx, input_params):
         """
         :param input_params: instance of type "inputPRINSEQ" (execPRINSEQ and
@@ -96,7 +97,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
            parameter "report" of String
         """
         # ctx is the context object
-        # return variables are: returnVal
+        # return variables are: output
         #BEGIN execReadLibraryPRINSEQ
         console = []
 #        self.log(console, 'Running execTrimmomatic with parameters: ')
@@ -433,13 +434,11 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         #END execReadLibraryPRINSEQ
 
         # At some point might do deeper type checking...
-        if not isinstance(returnVal, dict):
+        if not isinstance(output, dict):
             raise ValueError('Method execReadLibraryPRINSEQ return value ' +
-                             'returnVal is not type dict as required.')
+                             'output is not type dict as required.')
         # return the results
-        #return [returnVal]
         return [output]
-
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
