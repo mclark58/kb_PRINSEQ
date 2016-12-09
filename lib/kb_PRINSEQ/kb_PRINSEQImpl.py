@@ -437,7 +437,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
             raise ValueError('Method execReadLibraryPRINSEQ return value ' +
                              'returnVal is not type dict as required.')
         # return the results
-        return [returnVal]
+        #return [returnVal]
+        return [output]
 
     def status(self, ctx):
         #BEGIN_STATUS
