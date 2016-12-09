@@ -48,6 +48,6 @@ module kb_PRINSEQ {
     } outputReadLibraryExecPRINSEQ;
 
     funcdef execReadLibraryPRINSEQ(inputPRINSEQ input_params)
-        returns (outputReadLibraryExecPRINSEQ)
+        returns (outputReadLibraryExecPRINSEQ output)
         authentication required;
 };
