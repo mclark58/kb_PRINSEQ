@@ -59,7 +59,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         print(message)
         sys.stdout.flush()
 
-    def _setup_pe_files(self,readsLibrary, export_dir):
+    def _setup_pe_files(self,readsLibrary, export_dir, input_params):
         # Download reads Libs to FASTQ files
         input_files_info = dict()
         input_fwd_file_path = \
@@ -243,7 +243,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
             # Take the good paired and (re)upload new reads object.
             # We throwout the bad reads
 
-            input_files_info = self._setup_pe_files(readsLibrary, export_dir)
+            input_files_info = self._setup_pe_files(readsLibrary, export_dir, input_params)
 
             # RUN PRINSEQ with user options (lc_method and lc_threshold)
             cmd = ("perl /opt/lib/prinseq-lite-0.20.4/prinseq-lite.pl -fastq {} "
