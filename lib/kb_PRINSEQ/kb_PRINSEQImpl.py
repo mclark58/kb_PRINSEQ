@@ -388,7 +388,6 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
             output = perl_script.communicate()
             print "OUTPUT: " + str(output)
             found_results = False
-            stripped_fastq_name = "{}_".format(self._strip_file_type_from_name(fastq_filename))
             file_names_dict = dict()
             for element in output:
                 if "Input and filter stats:" in element:
@@ -404,7 +403,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
 
                     for read_filename in read_files_list:
                         print "Read File : {}".format(read_filename)
-                        if ("{}prinseq_good_".format(stripped_fastq_name) in read_filename):
+                        if ("{}prinseq_good_".format(fastq_filename) in read_filename):
                             #Found Good file. Save the Reads objects
                             self._log(None, 'Saving Filtered Single End Reads')
                             returnVal['output_filtered_single_end_ref'] = \
