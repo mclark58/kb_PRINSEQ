@@ -51,17 +51,28 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
     #BEGIN_CLASS_HEADER
     def _sanitize_file_name(self, file_name):
         str = file_name.split(".")
-        return ('_'.join(str[0:-1])) + "." + str[-1]
-
-    def _strip_file_type_from_name(self, file_name):
-        str = file_name.split(".")
-        return str[0]
+        return ('_'.join(str[0:-1]))
 
     def _log(self, target, message):
         if target is not None:
             target.append(message)
         print(message)
         sys.stdout.flush()
+
+    def _setup_pe_files(self,readsLibrary, export_dir)
+        # Download reads Libs to FASTQ files
+        input_files_info = dict()
+        input_fwd_file_path = \
+            readsLibrary['files'][input_params['input_reads_ref']]['files']['fwd']
+        input_files_info["fastq_filename"] = self._sanitize_file_name(os.path.basename(input_fwd_file_path))
+        input_files_info["fastq_file_path"] = os.path.join(export_dir, fastq_filename)
+        shutil.move(input_fwd_file_path, input_files_info["fastq_file_path"])
+        input_rev_file_path = \
+            readsLibrary['files'][input_params['input_reads_ref']]['files']['rev']
+        input_files_info["fastq2_filename"] = self._sanitize_file_name(os.path.basename(input_rev_file_path))
+        input_files_info["fastq2_file_path"] = os.path.join(export_dir, fastq2_filename)
+        shutil.move(input_rev_file_path, input_files_info["fastq2_file_path"])
+        return input_files_info
     #END_CLASS_HEADER
 
     # config contains contents of config file in a hash or None if it couldn't
@@ -73,7 +84,6 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         self.ws_url = config['workspace-url']
         #END_CONSTRUCTOR
         pass
-
 
     def execReadLibraryPRINSEQ(self, ctx, input_params):
         """
@@ -233,23 +243,13 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
             # Take the good paired and (re)upload new reads object.
             # We throwout the bad reads
 
-            # Download reads Libs to FASTQ files
-            input_fwd_file_path = \
-                readsLibrary['files'][input_params['input_reads_ref']]['files']['fwd']
-            fastq_filename = self._sanitize_file_name(os.path.basename(input_fwd_file_path))
-            fastq_file_path = os.path.join(export_dir, fastq_filename)
-            shutil.move(input_fwd_file_path, fastq_file_path)
-            input_rev_file_path = \
-                readsLibrary['files'][input_params['input_reads_ref']]['files']['rev']
-            fastq2_filename = self._sanitize_file_name(os.path.basename(input_rev_file_path))
-            fastq2_file_path = os.path.join(export_dir, fastq2_filename)
-            shutil.move(input_rev_file_path, fastq2_file_path)
+            input_files_info = self._setup_pe_files(readsLibrary, export_dir)
 
             # RUN PRINSEQ with user options (lc_method and lc_threshold)
             cmd = ("perl /opt/lib/prinseq-lite-0.20.4/prinseq-lite.pl -fastq {} "
                    "-fastq2 {} -out_format 3 -lc_method {} "
-                   "-lc_threshold {}").format(fastq_file_path,
-                                              fastq2_file_path,
+                   "-lc_threshold {}").format(input_files_info["fastq_file_path"],
+                                              input_files_info["fastq2_file_path"],
                                               input_params['lc_method'],
                                               input_params['lc_threshold'])
             print "Command to be run : " + cmd
@@ -257,10 +257,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
             print "ARGS:  " + str(args)
             perl_script = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output = perl_script.communicate()
-            print "OUTPUT: " + str(output) 
+            print "OUTPUT: " + str(output)
             found_results = False
-            stripped_fastq_name = "{}_".format(self._strip_file_type_from_name(fastq_filename))
-            stripped_fastq2_name = "{}_".format(self._strip_file_type_from_name(fastq2_filename))
             file_names_dict = dict()
             for element in output:
                 if "Input and filter stats:" in element:
@@ -279,23 +277,28 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                         file_direction = None
                         print "Read File : {}".format(read_filename)
                         # determine if forward(fastq) or reverse(fastq2) file
-                        if stripped_fastq_name in read_filename:
+                        if input_files_info["fastq_filename"] in read_filename:
                             file_direction = "fwd"
-                        elif stripped_fastq2_name in read_filename:
+                        elif input_files_info["fastq2_filename"]in read_filename:
                             file_direction = "rev"
                         if file_direction is not None:
                             # determine good singleton or good part of a pair.
-                            print "TEST: {}_prinseq_good_".format(stripped_fastq_name)
-                            if ("{}prinseq_good_singletons".format(stripped_fastq_name)
+                            print "TEST: {}_prinseq_good_".format(
+                                input_files_info["fastq_filename"])
+                            if ("{}_prinseq_good_singletons".format(
+                                    input_files_info["fastq_filename"])
                                     in read_filename or
-                                    "{}prinseq_good_singletons".format(stripped_fastq2_name)
+                                    "{}_prinseq_good_singletons".format(
+                                        input_files_info["fastq2_filename"])
                                     in read_filename):
                                 # Unpaired singletons that need to be
                                 # saved as a new single end reads object
                                 file_names_dict["{}_good_singletons".format(file_direction)] = \
                                     os.path.join(export_dir, read_filename)
-                            elif ("{}prinseq_good_".format(stripped_fastq_name) in read_filename or
-                                  "{}prinseq_good_".format(stripped_fastq2_name) in read_filename):
+                            elif ("{}_prinseq_good_".format(input_files_info["fastq_filename"])
+                                  in read_filename or
+                                  "{}_prinseq_good_".format(input_files_info["fastq2_filename"])
+                                  in read_filename):
                                 file_names_dict["{}_good_pair".format(file_direction)] = \
                                     os.path.join(export_dir, read_filename)
                     if (('fwd_good_pair' in file_names_dict) and
@@ -307,7 +310,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                                             'name': new_object_name,
                                                             'sequencing_tech': sequencing_tech,
                                                             'fwd_file':
-                                                            file_names_dict['fwd_good_pair'],
+                                                                file_names_dict['fwd_good_pair'],
                                                             'rev_file':
                                                                 file_names_dict['rev_good_pair']
                                                             }
