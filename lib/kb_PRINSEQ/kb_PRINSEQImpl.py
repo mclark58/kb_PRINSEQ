@@ -65,12 +65,12 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         input_fwd_file_path = \
             readsLibrary['files'][input_params['input_reads_ref']]['files']['fwd']
         input_files_info["fastq_filename"] = self._sanitize_file_name(os.path.basename(input_fwd_file_path))
-        input_files_info["fastq_file_path"] = os.path.join(export_dir, fastq_filename)
+        input_files_info["fastq_file_path"] = os.path.join(export_dir, input_files_info["fastq_filename"])
         shutil.move(input_fwd_file_path, input_files_info["fastq_file_path"])
         input_rev_file_path = \
             readsLibrary['files'][input_params['input_reads_ref']]['files']['rev']
         input_files_info["fastq2_filename"] = self._sanitize_file_name(os.path.basename(input_rev_file_path))
-        input_files_info["fastq2_file_path"] = os.path.join(export_dir, fastq2_filename)
+        input_files_info["fastq2_file_path"] = os.path.join(export_dir, input_files_info["fastq2_filename"])
         shutil.move(input_rev_file_path, input_files_info["fastq2_file_path"])
         return input_files_info
     #END_CLASS_HEADER
