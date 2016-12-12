@@ -59,7 +59,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         print(message)
         sys.stdout.flush()
 
-    def _setup_pe_files(self,readsLibrary, export_dir)
+    def _setup_pe_files(self,readsLibrary, export_dir):
         # Download reads Libs to FASTQ files
         input_files_info = dict()
         input_fwd_file_path = \
