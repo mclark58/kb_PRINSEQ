@@ -15,11 +15,14 @@ except:
 
 from pprint import pprint  # noqa: F401
 
+# from biokbase.workspace.client import ServerError as WorkspaceError
 from biokbase.workspace.client import Workspace as workspaceService
 # from Workspace.WorkspaceClient import Workspace
 from ReadsUtils.ReadsUtilsClient import ReadsUtils
 from kb_PRINSEQ.kb_PRINSEQImpl import kb_PRINSEQ
 from kb_PRINSEQ.kb_PRINSEQServer import MethodContext
+from DataFileUtil.baseclient import ServerError as DFUError
+from DataFileUtil.DataFileUtilClient import DataFileUtil
 
 
 class kb_PRINSEQTest(unittest.TestCase):
@@ -47,12 +50,12 @@ class kb_PRINSEQTest(unittest.TestCase):
         config.read(config_file)
         for nameval in config.items('kb_PRINSEQ'):
             cls.cfg[nameval[0]] = nameval[1]
-        # cls.shockURL = cls.cfg['shock-url']
+        cls.shockURL = cls.cfg['shock-url']
         cls.wsURL = cls.cfg['workspace-url']
         cls.wsClient = workspaceService(cls.wsURL, token=cls.token)
         cls.serviceImpl = kb_PRINSEQ(cls.cfg)
-        #cls.ws = workspaceService(cls.wsURL, token=token)
-        #cls.ws = Workspace(cls.cfg['workspace-url'], token=cls.token)
+        # cls.ws = workspaceService(cls.wsURL, token=token)
+        # cls.ws = Workspace(cls.cfg['workspace-url'], token=cls.token)
         # cls.hs = HandleService(url=cls.cfg['handle-service-url'],
         #                        token=cls.token)
         cls.scratch = cls.cfg['scratch']
@@ -61,16 +64,20 @@ class kb_PRINSEQTest(unittest.TestCase):
         suffix = int(time.time() * 1000)
         wsName = "test_kb_PRINSEQ_" + str(suffix)
         cls.ws_info = cls.wsClient.create_workspace({'workspace': wsName})
-        # cls.dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=cls.token)
-        cls.upload_test_reads()
+        cls.dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=cls.token)
+        cls.nodes_to_delete = []
+        cls.nodes_to_delete.extend(cls.upload_test_reads())
+        print "NODES TO DELETE: {}".format(str(cls.nodes_to_delete))
         print('\n\n=============== Starting tests ==================')
-
 
     @classmethod
     def tearDownClass(cls):
         if cls.getWsName():
             cls.wsClient.delete_workspace({'workspace': cls.getWsName()})
             print('Test workspace {} was deleted'.format(str(cls.getWsName())))
+        if hasattr(cls, 'nodes_to_delete'):
+            for node in cls.nodes_to_delete:
+                cls.delete_shock_node(node)
 
     def getWsClient(self):
         return self.__class__.wsClient
@@ -95,6 +102,7 @@ class kb_PRINSEQTest(unittest.TestCase):
         # readsUtils_Client = ReadsUtils(url=self.callback_url, token=ctx['token'])  # SDK local
         readsUtils_Client = ReadsUtils(os.environ['SDK_CALLBACK_URL'], token=cls.token)
 
+        temp_nodes = []
         fwdtf = 'small_forward.fq'
         revtf = 'small_reverse.fq'
         fwdtarget = os.path.join(cls.scratch, fwdtf)
@@ -109,7 +117,13 @@ class kb_PRINSEQTest(unittest.TestCase):
                                             'name': "se_reads",
                                             'sequencing_tech': 'Illumina',
                                             'fwd_file': fwdtarget}
-                                            )['obj_ref']
+                                           )['obj_ref']
+
+        se_data = cls.dfu.get_objects(
+            {'object_refs': [cls.getWsName() + '/se_reads']})['data'][0]['data']
+
+        temp_nodes.append(se_data['lib']['file']['id'])
+
         # Upload paired end reads
         cls.pe_reads_reference = \
             readsUtils_Client.upload_reads({'wsname': cls.getWsName(),
@@ -117,7 +131,19 @@ class kb_PRINSEQTest(unittest.TestCase):
                                             'sequencing_tech': 'Illumina',
                                             'fwd_file': fwdtarget,
                                             'rev_file': revtarget}
-                                            )['obj_ref']
+                                           )['obj_ref']
+        pe_data = cls.dfu.get_objects(
+            {'object_refs': [cls.getWsName() + '/pe_reads']})['data'][0]['data']
+        temp_nodes.append(pe_data['lib1']['file']['id'])
+
+        return temp_nodes
+
+    @classmethod
+    def delete_shock_node(cls, node_id):
+        header = {'Authorization': 'Oauth {0}'.format(cls.token)}
+        requests.delete(cls.shockURL + '/node/' + node_id, headers=header,
+                        allow_redirects=True)
+        print('Deleted shock node ' + node_id)
 
     @classmethod
     def getPeRef(cls):
@@ -128,58 +154,154 @@ class kb_PRINSEQTest(unittest.TestCase):
         print "READS REFERENCE:"+str(cls.se_reads_reference)
         return cls.se_reads_reference
 
-
-    # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
-    def test_your_method(self):
-        # Prepare test objects in workspace if needed using
-        # self.getWsClient().save_objects({'workspace': self.getWsName(),
-        #                                  'objects': []})
-        #
-        # Run your method by
-        # ret = self.getImpl().your_method(self.getContext(), parameters...)
-        #
-        # Check returned data with
-        # self.assertEqual(ret[...], ...) or other unittest methods
-        pass
-
-    def blah_test_basic_pe_execution(self):
-        input_reads_ref = "5119/7/1"
-        output_ws = "jkbaumohl:1454626055010"
-        output_reads_name = "T_READS_Filtered"
-        lc_method = "dust"
-        lc_threshold = 2
-
-        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": input_reads_ref,
-                                                 "output_ws": output_ws,
-                                                 "output_reads_name": output_reads_name,
-                                                 "lc_method": lc_method,
-                                                 "lc_threshold": lc_threshold})
-
-    def blah_test_basic_se_execution(self):
-        input_reads_ref = "5119/8/1"
-        output_ws = "jkbaumohl:1454626055010"
-        output_reads_name = "SE_READS_Filtered"
-        lc_method = "dust"
-        lc_threshold = 2
-
-        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": input_reads_ref,
-                                                 "output_ws": output_ws,
-                                                 "output_reads_name": output_reads_name,
-                                                 "lc_method": lc_method,
-                                                 "lc_threshold": lc_threshold})
-
-    def test_se_dust_partial(self):
-        output_reads_name = "SE_dust_partial"
+    def btest_se_dust_partial(self):
+        # The original input reads file has 12500 reads. This filtered nearly 3000 reads.
+        output_reads_name = "SE_dust_2"
         lc_method = "dust"
         lc_threshold = 2
         self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.se_reads_reference,
-                                                 "output_ws": self.getWsName(),
-                                                 "output_reads_name": output_reads_name,
-                                                 "lc_method": lc_method,
-                                                 "lc_threshold": lc_threshold})
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 9544)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)
 
-    
+    def btest_se_dust_loose(self):
+        # The original input reads file has 12500 reads. None of the reads get filtered.
+        output_reads_name = "SE_dust_40"
+        lc_method = "dust"
+        lc_threshold = 40
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.se_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 12500)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)
 
+    def btest_se_entropy_partial(self):
+        # The original input reads file has 12500 reads. Only 14 read gets filtered.
+        output_reads_name = "SE_entropy_70"
+        lc_method = "entropy"
+        lc_threshold = 70
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.se_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 12486)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)
 
+    def btest_se_entropy_loose(self):
+        # The original input reads file has 12500 reads. No reads get filtered.
+        output_reads_name = "SE_entropy_50"
+        lc_method = "entropy"
+        lc_threshold = 50
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.se_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 12500)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)
 
+    def btest_se_entropy_none(self):
+        # No New reads object created because all reads filtered out.
+        output_reads_name = "SE_entropy_100"
+        lc_method = "entropy"
+        lc_threshold = 100
 
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx,
+                                              {"input_reads_ref": self.se_reads_reference,
+                                               "output_ws": self.getWsName(),
+                                               "output_reads_name": output_reads_name,
+                                               "lc_method": lc_method,
+                                               "lc_threshold": lc_threshold})
+
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + output_reads_name]})
+        print "ERROR:{}:".format(str(context.exception.message))
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(output_reads_name)
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+
+    def test_pe_dust_partial(self):
+        # Three new objects made
+        # 1) Filtered Pair-end object with matching good Reads
+        # 2&3) Filtered FWD and REV Reads without matching pair (singletons).
+        output_reads_name = "PE_dust_2"
+        lc_method = "dust"
+        lc_threshold = 2
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.pe_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        # Check for filtered paired reads object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 14950)
+        node = reads_object['lib1']['file']['id']
+        self.delete_shock_node(node)
+        # Check fwd singletons object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name +
+                             "_fwd_singletons"]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 2069)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)
+        # Check rev singletons object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name +
+                             "_rev_singletons"]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 2002)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)
+
+    def test_pe_dust_strict(self):
+        # Two new objects made (NO PAIRED END MADE as no matching pairs)
+        # 1&2) Filtered FWD and REV Reads without matching pair (singletons).
+        output_reads_name = "PE_dust_0"
+        lc_method = "dust"
+        lc_threshold = 0
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.pe_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        # Check filtered paired reads object does not exist
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + output_reads_name]})
+        print "ERROR:{}:".format(str(context.exception.message))
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(output_reads_name)
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        # Check fwd singletons object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name +
+                             "_fwd_singletons"]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 1)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)
+        # Check rev singletons object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name +
+                             "_rev_singletons"]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 1)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)

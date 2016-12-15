@@ -324,7 +324,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                         print "REFERENCE : " + str(returnVal['filtered_paired_end_ref'])
                     else:
                         reportObj['text_message'] += \
-                            "\n\nNo good matching pairs passed low complexity filtering.\n"
+                            "\n\nNo good matching pairs passed low complexity filtering.\n" + \
+                            "Consider loosening the threshold value.\n"
                     if 'fwd_good_singletons' in file_names_dict:
                         self._log(None, 'Saving new Forward Unpaired Reads')
                         returnVal['output_filtered_fwd_unpaired_end_ref'] = \
@@ -392,6 +393,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
             output = perl_script.communicate()
             print "OUTPUT: " + str(output)
             found_results = False
+            found_se_filtered_file = False
             file_names_dict = dict()
             for element in output:
                 if "Input and filter stats:" in element:
@@ -424,7 +426,12 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                 {'ref': returnVal['output_filtered_single_end_ref'],
                                  'description': 'Filtered Single End Reads'})
                             print "REFERENCE : " + str(returnVal['output_filtered_single_end_ref'])
+                            found_se_filtered_file = True
                             break
+            if not found_se_filtered_file:
+                reportObj['text_message'] += \
+                            "\n\nNone of the reads passed low complexity filtering.\n" + \
+                            "Consider loosening the threshold value.\n"
             if not found_results:
                 raise Exception('Unable to execute PRINSEQ, Error: {}'.format(str(output)))
             print "FILES DICT : {}".format(str(file_names_dict))
