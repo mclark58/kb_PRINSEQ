@@ -363,7 +363,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                     if len(reportObj['objects_created']) > 0:
                         reportObj['text_message'] += "\nOBJECTS CREATED :\n"
                         for obj in reportObj['objects_created']:
-                            reportObj['text_message'] += "{} : {}".format(obj['object_name'],
+                            reportObj['text_message'] += "{} : {}\n".format(obj['object_name'],
                                                                           obj['description'])
                     else:
                         reportObj['text_message'] += \
