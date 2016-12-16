@@ -4,7 +4,6 @@ import os  # noqa: F401
 import json  # noqa: F401
 import time
 import requests
-import os
 import shutil
 
 from os import environ
@@ -154,7 +153,7 @@ class kb_PRINSEQTest(unittest.TestCase):
         print "READS REFERENCE:"+str(cls.se_reads_reference)
         return cls.se_reads_reference
 
-    def btest_se_dust_partial(self):
+    def test_se_dust_partial(self):
         # The original input reads file has 12500 reads. This filtered nearly 3000 reads.
         output_reads_name = "SE_dust_2"
         lc_method = "dust"
@@ -170,7 +169,7 @@ class kb_PRINSEQTest(unittest.TestCase):
         node = reads_object['lib']['file']['id']
         self.delete_shock_node(node)
 
-    def btest_se_dust_loose(self):
+    def test_se_dust_loose(self):
         # The original input reads file has 12500 reads. None of the reads get filtered.
         output_reads_name = "SE_dust_40"
         lc_method = "dust"
@@ -186,7 +185,7 @@ class kb_PRINSEQTest(unittest.TestCase):
         node = reads_object['lib']['file']['id']
         self.delete_shock_node(node)
 
-    def btest_se_entropy_partial(self):
+    def test_se_entropy_partial(self):
         # The original input reads file has 12500 reads. Only 14 read gets filtered.
         output_reads_name = "SE_entropy_70"
         lc_method = "entropy"
@@ -202,7 +201,7 @@ class kb_PRINSEQTest(unittest.TestCase):
         node = reads_object['lib']['file']['id']
         self.delete_shock_node(node)
 
-    def btest_se_entropy_loose(self):
+    def test_se_entropy_loose(self):
         # The original input reads file has 12500 reads. No reads get filtered.
         output_reads_name = "SE_entropy_50"
         lc_method = "entropy"
@@ -218,7 +217,7 @@ class kb_PRINSEQTest(unittest.TestCase):
         node = reads_object['lib']['file']['id']
         self.delete_shock_node(node)
 
-    def btest_se_entropy_none(self):
+    def test_se_entropy_none(self):
         # No New reads object created because all reads filtered out.
         output_reads_name = "SE_entropy_100"
         lc_method = "entropy"
@@ -305,3 +304,146 @@ class kb_PRINSEQTest(unittest.TestCase):
         self.assertEqual(reads_object['read_count'], 1)
         node = reads_object['lib']['file']['id']
         self.delete_shock_node(node)
+
+    def test_pe_dust_loose(self):
+        # Only 1 new objects made since no reads filtered.
+        # 1) Filtered Pair-end object with matching Reads
+        output_reads_name = "PE_dust_100"
+        lc_method = "dust"
+        lc_threshold = 100
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.pe_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        # Check for filtered paired reads object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 25000)
+        node = reads_object['lib1']['file']['id']
+        self.delete_shock_node(node)
+        # Check fwd singletons object does not exist
+        temp_object_name = output_reads_name + "_fwd_singletons"
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(temp_object_name)
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + temp_object_name]})
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        # Check rev singletons object does not exist
+        temp_object_name = output_reads_name + "_rev_singletons"
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(temp_object_name)
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + temp_object_name]})
+        # print "ERROR:{}:".format(str(context.exception.message))
+        # expected_error_prefix = \
+        #    "No object with name {} exists in workspace".format(temp_object_name)
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+
+    def test_pe_entropy_partial(self):
+        # Two new objects made (the reverse singleton has no reads, no object made)
+        # 1) Filtered Pair-end object with matching good Reads
+        # 2) Filtered FWD and REV Reads without matching pair (singletons).
+        output_reads_name = "PE_entropy_60"
+        lc_method = "entropy"
+        lc_threshold = 60
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.pe_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        # Check for filtered paired reads object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 24996)
+        node = reads_object['lib1']['file']['id']
+        self.delete_shock_node(node)
+        # Check fwd singletons object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name +
+                             "_fwd_singletons"]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 2)
+        node = reads_object['lib']['file']['id']
+        self.delete_shock_node(node)
+        # Check rev singletons object does not exist
+        temp_object_name = output_reads_name + "_rev_singletons"
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(temp_object_name)
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + temp_object_name]})
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+
+    def test_pe_entropy_strict(self):
+        # No new objects made
+        output_reads_name = "PE_entropy_100"
+        lc_method = "entropy"
+        lc_threshold = 100
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.pe_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        # Check filtered paired reads object does not exist
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + output_reads_name]})
+        print "ERROR:{}:".format(str(context.exception.message))
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(output_reads_name)
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        # Check fwd singletons object does not exist
+        temp_object_name = output_reads_name + "_fwd_singletons"
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(temp_object_name)
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + temp_object_name]})
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        # Check rev singletons object does not exist
+        temp_object_name = output_reads_name + "_rev_singletons"
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(temp_object_name)
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + temp_object_name]})
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+
+    def test_pe_entropy_loose(self):
+        # Only 1 new objects made since no reads filtered.
+        # 1) Filtered Pair-end object with matching Reads
+        output_reads_name = "PE_entropy_0"
+        lc_method = "entropy"
+        lc_threshold = 0
+        self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref": self.pe_reads_reference,
+                                                         "output_ws": self.getWsName(),
+                                                         "output_reads_name": output_reads_name,
+                                                         "lc_method": lc_method,
+                                                         "lc_threshold": lc_threshold})
+        # Check for filtered paired reads object
+        reads_object = self.dfu.get_objects(
+            {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
+        self.assertEqual(reads_object['read_count'], 25000)
+        node = reads_object['lib1']['file']['id']
+        self.delete_shock_node(node)
+        # Check fwd singletons object does not exist
+        temp_object_name = output_reads_name + "_fwd_singletons"
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + temp_object_name]})
+        print "ERROR:{}:".format(str(context.exception.message))
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(temp_object_name)
+        print "Expected Error:{}".format(temp_object_name)
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        # Check rev singletons object does not exist
+        temp_object_name = output_reads_name + "_rev_singletons"
+        with self.assertRaises(DFUError) as context:
+            self.dfu.get_objects(
+                {'object_refs': [self.getWsName() + '/' + temp_object_name]})
+        print "ERROR:{}:".format(str(context.exception.message))
+        expected_error_prefix = \
+            "No object with name {} exists in workspace".format(temp_object_name)
+        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))

@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
 import sys
-import traceback
 from biokbase.workspace.client import Workspace as workspaceService
 #from Workspace.baseclient import ServerError as WorkspaceError
 import requests
-requests.packages.urllib3.disable_warnings()
 import subprocess
 import os
 import tempfile
 import shutil
 import re
-from pprint import pprint, pformat
-import uuid
 import shlex
 
 ## SDK Utils
@@ -20,6 +16,8 @@ import shlex
 from ReadsUtils.ReadsUtilsClient import ReadsUtils
 #from SetAPI.SetAPIClient import SetAPI
 from KBaseReport.KBaseReportClient import KBaseReport
+
+requests.packages.urllib3.disable_warnings()
 #END_HEADER
 
 
@@ -124,7 +122,6 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
 
         token = ctx['token']
         wsClient = workspaceService(self.ws_url, token=token)
-        headers = {'Authorization': 'OAuth ' + token}
         env = os.environ.copy()
         env['KB_AUTH_TOKEN'] = token
 
@@ -271,9 +268,9 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                     reportObj['text_message'] = report
                     read_files_list = os.listdir(export_dir)
 
-                    proc = subprocess.Popen(['ls', '-l', export_dir], stdout=subprocess.PIPE)
-                    proc_output = proc.stdout.read()
-                    #print "PROC OUTPUT : " + proc_output
+                    # proc = subprocess.Popen(['ls', '-l', export_dir], stdout=subprocess.PIPE)
+                    # proc_output = proc.stdout.read()
+                    # print "PROC OUTPUT : " + proc_output
 
                     for read_filename in read_files_list:
                         file_direction = None
@@ -320,7 +317,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                         reportObj['objects_created'].append({'ref':
                                                              returnVal['filtered_paired_end_ref'],
                                                              'description':
-                                                             'Filtered Paired End Reads'})
+                                                             'Filtered Paired End Reads',
+                                                             'object_name': new_object_name})
                         print "REFERENCE : " + str(returnVal['filtered_paired_end_ref'])
                     else:
                         reportObj['text_message'] += \
@@ -328,12 +326,11 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                             "Consider loosening the threshold value.\n"
                     if 'fwd_good_singletons' in file_names_dict:
                         self._log(None, 'Saving new Forward Unpaired Reads')
+                        fwd_object_name = "{}_fwd_singletons".format(new_object_name)
                         returnVal['output_filtered_fwd_unpaired_end_ref'] = \
                             readsUtils_Client.upload_reads({'wsname':
                                                             str(input_params['output_ws']),
-                                                            'name':
-                                                            "{}_fwd_singletons".format(
-                                                                new_object_name),
+                                                            'name': fwd_object_name,
                                                             'sequencing_tech':
                                                             sequencing_tech,
                                                             'fwd_file':
@@ -341,17 +338,17 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                                            )['obj_ref']
                         reportObj['objects_created'].append(
                             {'ref': returnVal['output_filtered_fwd_unpaired_end_ref'],
-                             'description': 'Filtered Forward Unpaired End Reads'})
+                             'description': 'Filtered Forward Unpaired End Reads',
+                             'object_name': fwd_object_name})
                         print "REFERENCE : " + \
                             str(returnVal['output_filtered_fwd_unpaired_end_ref'])
                     if 'rev_good_singletons' in file_names_dict:
                         self._log(None, 'Saving new Reverse Unpaired Reads')
+                        rev_object_name = "{}_rev_singletons".format(new_object_name)
                         returnVal['output_filtered_rev_unpaired_end_ref'] = \
                             readsUtils_Client.upload_reads({'wsname':
                                                             str(input_params['output_ws']),
-                                                            'name':
-                                                            "{}_rev_singletons".format(
-                                                                new_object_name),
+                                                            'name': rev_object_name,
                                                             'sequencing_tech':
                                                             sequencing_tech,
                                                             'fwd_file':
@@ -359,16 +356,23 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                                            )['obj_ref']
                         reportObj['objects_created'].append(
                             {'ref': returnVal['output_filtered_rev_unpaired_end_ref'],
-                             'description': 'Filtered Reverse Unpaired End Reads'})
+                             'description': 'Filtered Reverse Unpaired End Reads',
+                             'object_name': rev_object_name})
                         print "REFERENCE : " + \
                             str(returnVal['output_filtered_rev_unpaired_end_ref'])
-
+                    if len(reportObj['objects_created']) > 0:
+                        reportObj['text_message'] += "\nOBJECTS CREATED :\n"
+                        for obj in reportObj['objects_created']:
+                            reportObj['text_message'] += "{} : {}".format(obj['object_name'],
+                                                                          obj['description'])
+                    else:
+                        reportObj['text_message'] += \
+                            "\nFiltering filtered out all reads. No objects made.\n"
             if not found_results:
                 raise Exception('Unable to execute PRINSEQ, Error: {}'.format(str(output)))
             print "FILES DICT : {}".format(str(file_names_dict))
             print "REPORT OBJECT :"
             print str(reportObj)
-#        raise ValueError('OUTPUT : ' + str(output))
 
         elif read_type == 'SE':
             # Download reads Libs to FASTQ files
@@ -430,8 +434,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                             break
             if not found_se_filtered_file:
                 reportObj['text_message'] += \
-                            "\n\nNone of the reads passed low complexity filtering.\n" + \
-                            "Consider loosening the threshold value.\n"
+                    "\n\nNone of the reads passed low complexity filtering.\n" + \
+                    "Consider loosening the threshold value.\n"
             if not found_results:
                 raise Exception('Unable to execute PRINSEQ, Error: {}'.format(str(output)))
             print "FILES DICT : {}".format(str(file_names_dict))
