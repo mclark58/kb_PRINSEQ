@@ -129,7 +129,10 @@ class kb_PRINSEQTest(unittest.TestCase):
                                             'name': "pe_reads",
                                             'sequencing_tech': 'Illumina',
                                             'fwd_file': fwdtarget,
-                                            'rev_file': revtarget}
+                                            'rev_file': revtarget,
+                                            'insert_size_mean': 42,
+                                            'insert_size_std_dev': 10,
+                                            }
                                            )['obj_ref']
         pe_data = cls.dfu.get_objects(
             {'object_refs': [cls.getWsName() + '/pe_reads']})['data'][0]['data']
@@ -166,6 +169,7 @@ class kb_PRINSEQTest(unittest.TestCase):
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
         self.assertEqual(reads_object['read_count'], 9544)
+        self.assertEqual(reads_object['sequencing_tech'], "Illumina")
         node = reads_object['lib']['file']['id']
         self.delete_shock_node(node)
 
@@ -254,6 +258,8 @@ class kb_PRINSEQTest(unittest.TestCase):
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
         self.assertEqual(reads_object['read_count'], 14950)
+        self.assertEqual(reads_object['insert_size_mean'], 42)
+        self.assertEqual(reads_object['sequencing_tech'], "Illumina")
         node = reads_object['lib1']['file']['id']
         self.delete_shock_node(node)
         # Check fwd singletons object
@@ -261,6 +267,8 @@ class kb_PRINSEQTest(unittest.TestCase):
             {'object_refs': [self.getWsName() + '/' + output_reads_name +
                              "_fwd_singletons"]})['data'][0]['data']
         self.assertEqual(reads_object['read_count'], 2069)
+        self.assertEqual(reads_object['sequencing_tech'], "Illumina")
+        self.assertTrue('insert_size_mean' not in reads_object)
         node = reads_object['lib']['file']['id']
         self.delete_shock_node(node)
         # Check rev singletons object
@@ -268,6 +276,7 @@ class kb_PRINSEQTest(unittest.TestCase):
             {'object_refs': [self.getWsName() + '/' + output_reads_name +
                              "_rev_singletons"]})['data'][0]['data']
         self.assertEqual(reads_object['read_count'], 2002)
+        self.assertEqual(reads_object['sequencing_tech'], "Illumina")
         node = reads_object['lib']['file']['id']
         self.delete_shock_node(node)
 

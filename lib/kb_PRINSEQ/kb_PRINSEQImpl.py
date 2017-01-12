@@ -236,8 +236,6 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         export_dir = os.path.join(tempdir, info[1])
         os.makedirs(export_dir)
 
-        sequencing_tech = readsLibrary['files'][input_params['input_reads_ref']]['sequencing_tech']
-
         if read_type == 'PE':
             # IF PAIRED END, potentially 6 files created
             # one of each for the two directions(good(paired), good_singletons, bad)
@@ -307,7 +305,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                             readsUtils_Client.upload_reads({'wsname':
                                                             str(input_params['output_ws']),
                                                             'name': new_object_name,
-                                                            'sequencing_tech': sequencing_tech,
+                                                            'source_reads_ref':
+                                                            input_params['input_reads_ref'],
                                                             'fwd_file':
                                                                 file_names_dict['fwd_good_pair'],
                                                             'rev_file':
@@ -331,8 +330,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                             readsUtils_Client.upload_reads({'wsname':
                                                             str(input_params['output_ws']),
                                                             'name': fwd_object_name,
-                                                            'sequencing_tech':
-                                                            sequencing_tech,
+                                                            'source_reads_ref':
+                                                            input_params['input_reads_ref'],
                                                             'fwd_file':
                                                             file_names_dict['fwd_good_singletons']}
                                                            )['obj_ref']
@@ -349,8 +348,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                             readsUtils_Client.upload_reads({'wsname':
                                                             str(input_params['output_ws']),
                                                             'name': rev_object_name,
-                                                            'sequencing_tech':
-                                                            sequencing_tech,
+                                                            'source_reads_ref':
+                                                            input_params['input_reads_ref'],
                                                             'fwd_file':
                                                             file_names_dict['rev_good_singletons']}
                                                            )['obj_ref']
@@ -420,8 +419,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                 readsUtils_Client.upload_reads({'wsname':
                                                                 str(input_params['output_ws']),
                                                                 'name': new_object_name,
-                                                                'sequencing_tech':
-                                                                sequencing_tech,
+                                                                'source_reads_ref':
+                                                                input_params['input_reads_ref'],
                                                                 'fwd_file':
                                                                     os.path.join(export_dir,
                                                                                  read_filename)}
