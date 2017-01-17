@@ -44,7 +44,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/jkbaumohl/kb_PRINSEQ.git"
-    GIT_COMMIT_HASH = "a58d989342c9446628e850eab532c7967bdb2361"
+    GIT_COMMIT_HASH = "a2c3d3ebcd9b76b0abc22641eb19a8373e84b64b"
 
     #BEGIN_CLASS_HEADER
     def _sanitize_file_name(self, file_name):
@@ -87,6 +87,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         #END_CONSTRUCTOR
         pass
 
+
     def execReadLibraryPRINSEQ(self, ctx, input_params):
         """
         :param input_params: instance of type "inputPRINSEQ" (execPRINSEQ and
@@ -94,14 +95,17 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
            KBaseFile.PairedEndLibrary or KBaseFile.SingleEndLibrary output_ws
            : workspace to write to output_reads_name : obj_name to create
            lc_method : Low complexity method - value must be "dust" or
-           "entropy" lc_threshold : Low complexity threshold - Value must be
-           an integer between 0 and 100. Note a higher lc_threshold in
-           entropy is more stringent. Note a lower lc_threshold is less
-           stringent with dust) -> structure: parameter "input_reads_ref" of
-           type "data_obj_ref", parameter "output_ws" of type
-           "workspace_name" (Common Types), parameter "output_reads_name" of
-           type "data_obj_name", parameter "lc_method" of String, parameter
-           "lc_threshold" of Long
+           "entropy" lc_entropy_threshold : Low complexity threshold - Value
+           must be an integer between 0 and 100. Note a higher
+           lc_entropy_threshold in entropy is more stringent.
+           lc_dust_threshold : Low complexity threshold - Value must be an
+           integer between 0 and 100. Note a lower lc_entropy_threshold is
+           less stringent with dust) -> structure: parameter
+           "input_reads_ref" of type "data_obj_ref", parameter "output_ws" of
+           type "workspace_name" (Common Types), parameter
+           "output_reads_name" of type "data_obj_name", parameter "lc_method"
+           of String, parameter "lc_entropy_threshold" of Long, parameter
+           "lc_dust_threshold" of Long
         :returns: instance of type "outputReadLibraryExecPRINSEQ" ->
            structure: parameter "output_filtered_ref" of type "data_obj_ref",
            parameter "output_unpaired_fwd_ref" of type "data_obj_ref",
@@ -128,8 +132,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         # param checks
         required_params = ['input_reads_ref',
                            'output_ws',
-                           'lc_method',
-                           'lc_threshold']
+                           'lc_method']
         # output reads_name is optional. If not set will use old_objects name
         for required_param in required_params:
             if required_param not in input_params or input_params[required_param] is None:
@@ -140,11 +143,26 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                              "it is currently set to : " +
                              input_params['lc_method'])
 
-        if (input_params['lc_threshold'] < 0.0) or (input_params['lc_threshold'] > 100.0):
-            raise ValueError("lc_threshold must be between 0 and 100, " +
-                             "it is currently set to : " +
-                             input_params['lc_threshold'])
+        if not ('lc_entropy_threshold' in input_params or 'lc_dust_threshold' in input_params):
+            raise ValueError(("A low complexity threshold needs to be " +
+                              "entered for {}".format(input_params['lc_method'])))
+        elif input_params['lc_method'] == 'dust':
+            if 'lc_dust_threshold' not in input_params:
+                raise ValueError(("A low complexity threshold needs to be " +
+                                  "entered for {}".format(input_params['lc_method'])))
+            else:
+                lc_threshold = input_params['lc_dust_threshold']
+        else:
+            if 'lc_entropy_threshold' not in input_params:
+                raise ValueError(("A low complexity threshold needs to be " +
+                                  "entered for {}".format(input_params['lc_method'])))
+            else:
+                lc_threshold = input_params['lc_entropy_threshold']
 
+        if (lc_threshold < 0.0) or (lc_threshold > 100.0):
+            raise ValueError(("The threshold for {} must be between 0 and 100, it is currently " +
+                              "set to : {}").format(input_params['lc_method'],
+                                                    lc_threshold))
         reportObj = {'objects_created': [],
                      'text_message': ''}
 
@@ -250,7 +268,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                    "-lc_threshold {}").format(input_files_info["fastq_file_path"],
                                               input_files_info["fastq2_file_path"],
                                               input_params['lc_method'],
-                                              input_params['lc_threshold'])
+                                              lc_threshold)
             print "Command to be run : " + cmd
             args = shlex.split(cmd)
             perl_script = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -363,7 +381,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                         reportObj['text_message'] += "\nOBJECTS CREATED :\n"
                         for obj in reportObj['objects_created']:
                             reportObj['text_message'] += "{} : {}\n".format(obj['object_name'],
-                                                                          obj['description'])
+                                                                            obj['description'])
                     else:
                         reportObj['text_message'] += \
                             "\nFiltering filtered out all reads. No objects made.\n"
@@ -388,7 +406,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                    "-out_format 3 -lc_method {} "
                    "-lc_threshold {}").format(fastq_file_path,
                                               input_params['lc_method'],
-                                              input_params['lc_threshold'])
+                                              lc_threshold)
             print "Command to be run : " + cmd
             args = shlex.split(cmd)
             print "ARGS:  " + str(args)
@@ -458,7 +476,6 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                              'output is not type dict as required.')
         # return the results
         return [output]
-
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",

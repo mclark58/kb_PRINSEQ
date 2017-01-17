@@ -133,7 +133,8 @@ inputPRINSEQ is a reference to a hash where the following keys are defined:
 	output_ws has a value which is a kb_PRINSEQ.workspace_name
 	output_reads_name has a value which is a kb_PRINSEQ.data_obj_name
 	lc_method has a value which is a string
-	lc_threshold has a value which is an int
+	lc_entropy_threshold has a value which is an int
+	lc_dust_threshold has a value which is an int
 data_obj_ref is a string
 workspace_name is a string
 data_obj_name is a string
@@ -156,7 +157,8 @@ inputPRINSEQ is a reference to a hash where the following keys are defined:
 	output_ws has a value which is a kb_PRINSEQ.workspace_name
 	output_reads_name has a value which is a kb_PRINSEQ.data_obj_name
 	lc_method has a value which is a string
-	lc_threshold has a value which is an int
+	lc_entropy_threshold has a value which is an int
+	lc_dust_threshold has a value which is an int
 data_obj_ref is a string
 workspace_name is a string
 data_obj_name is a string
@@ -410,9 +412,10 @@ output_ws : workspace to write to
 output_reads_name : obj_name to create
 
 lc_method : Low complexity method - value must be "dust" or "entropy"
-lc_threshold : Low complexity threshold - Value must be an integer between 0 and 100. 
-                     Note a higher lc_threshold in entropy is more stringent. 
-                     Note a lower lc_threshold is less stringent with dust
+lc_entropy_threshold : Low complexity threshold - Value must be an integer between 0 and 100. 
+                       Note a higher lc_entropy_threshold in entropy is more stringent. 
+lc_dust_threshold : Low complexity threshold - Value must be an integer between 0 and 100.                        
+                     Note a lower lc_entropy_threshold is less stringent with dust
 
 
 =item Definition
@@ -425,7 +428,8 @@ input_reads_ref has a value which is a kb_PRINSEQ.data_obj_ref
 output_ws has a value which is a kb_PRINSEQ.workspace_name
 output_reads_name has a value which is a kb_PRINSEQ.data_obj_name
 lc_method has a value which is a string
-lc_threshold has a value which is an int
+lc_entropy_threshold has a value which is an int
+lc_dust_threshold has a value which is an int
 
 </pre>
 
@@ -438,7 +442,8 @@ input_reads_ref has a value which is a kb_PRINSEQ.data_obj_ref
 output_ws has a value which is a kb_PRINSEQ.workspace_name
 output_reads_name has a value which is a kb_PRINSEQ.data_obj_name
 lc_method has a value which is a string
-lc_threshold has a value which is an int
+lc_entropy_threshold has a value which is an int
+lc_dust_threshold has a value which is an int
 
 
 =end text

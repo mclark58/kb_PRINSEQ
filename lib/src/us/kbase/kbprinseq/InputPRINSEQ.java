@@ -19,9 +19,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * output_ws : workspace to write to 
  * output_reads_name : obj_name to create
  * lc_method : Low complexity method - value must be "dust" or "entropy"
- * lc_threshold : Low complexity threshold - Value must be an integer between 0 and 100. 
- *                      Note a higher lc_threshold in entropy is more stringent. 
- *                      Note a lower lc_threshold is less stringent with dust
+ * lc_entropy_threshold : Low complexity threshold - Value must be an integer between 0 and 100. 
+ *                        Note a higher lc_entropy_threshold in entropy is more stringent. 
+ * lc_dust_threshold : Low complexity threshold - Value must be an integer between 0 and 100.                        
+ *                      Note a lower lc_entropy_threshold is less stringent with dust
  * </pre>
  * 
  */
@@ -32,7 +33,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "output_ws",
     "output_reads_name",
     "lc_method",
-    "lc_threshold"
+    "lc_entropy_threshold",
+    "lc_dust_threshold"
 })
 public class InputPRINSEQ {
 
@@ -44,8 +46,10 @@ public class InputPRINSEQ {
     private String outputReadsName;
     @JsonProperty("lc_method")
     private String lcMethod;
-    @JsonProperty("lc_threshold")
-    private Long lcThreshold;
+    @JsonProperty("lc_entropy_threshold")
+    private Long lcEntropyThreshold;
+    @JsonProperty("lc_dust_threshold")
+    private Long lcDustThreshold;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("input_reads_ref")
@@ -108,18 +112,33 @@ public class InputPRINSEQ {
         return this;
     }
 
-    @JsonProperty("lc_threshold")
-    public Long getLcThreshold() {
-        return lcThreshold;
+    @JsonProperty("lc_entropy_threshold")
+    public Long getLcEntropyThreshold() {
+        return lcEntropyThreshold;
     }
 
-    @JsonProperty("lc_threshold")
-    public void setLcThreshold(Long lcThreshold) {
-        this.lcThreshold = lcThreshold;
+    @JsonProperty("lc_entropy_threshold")
+    public void setLcEntropyThreshold(Long lcEntropyThreshold) {
+        this.lcEntropyThreshold = lcEntropyThreshold;
     }
 
-    public InputPRINSEQ withLcThreshold(Long lcThreshold) {
-        this.lcThreshold = lcThreshold;
+    public InputPRINSEQ withLcEntropyThreshold(Long lcEntropyThreshold) {
+        this.lcEntropyThreshold = lcEntropyThreshold;
+        return this;
+    }
+
+    @JsonProperty("lc_dust_threshold")
+    public Long getLcDustThreshold() {
+        return lcDustThreshold;
+    }
+
+    @JsonProperty("lc_dust_threshold")
+    public void setLcDustThreshold(Long lcDustThreshold) {
+        this.lcDustThreshold = lcDustThreshold;
+    }
+
+    public InputPRINSEQ withLcDustThreshold(Long lcDustThreshold) {
+        this.lcDustThreshold = lcDustThreshold;
         return this;
     }
 
@@ -135,7 +154,7 @@ public class InputPRINSEQ {
 
     @Override
     public String toString() {
-        return ((((((((((((("InputPRINSEQ"+" [inputReadsRef=")+ inputReadsRef)+", outputWs=")+ outputWs)+", outputReadsName=")+ outputReadsName)+", lcMethod=")+ lcMethod)+", lcThreshold=")+ lcThreshold)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("InputPRINSEQ"+" [inputReadsRef=")+ inputReadsRef)+", outputWs=")+ outputWs)+", outputReadsName=")+ outputReadsName)+", lcMethod=")+ lcMethod)+", lcEntropyThreshold=")+ lcEntropyThreshold)+", lcDustThreshold=")+ lcDustThreshold)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

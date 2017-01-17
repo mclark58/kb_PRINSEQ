@@ -40,14 +40,17 @@ class kb_PRINSEQ(object):
            KBaseFile.PairedEndLibrary or KBaseFile.SingleEndLibrary output_ws
            : workspace to write to output_reads_name : obj_name to create
            lc_method : Low complexity method - value must be "dust" or
-           "entropy" lc_threshold : Low complexity threshold - Value must be
-           an integer between 0 and 100. Note a higher lc_threshold in
-           entropy is more stringent. Note a lower lc_threshold is less
-           stringent with dust) -> structure: parameter "input_reads_ref" of
-           type "data_obj_ref", parameter "output_ws" of type
-           "workspace_name" (Common Types), parameter "output_reads_name" of
-           type "data_obj_name", parameter "lc_method" of String, parameter
-           "lc_threshold" of Long
+           "entropy" lc_entropy_threshold : Low complexity threshold - Value
+           must be an integer between 0 and 100. Note a higher
+           lc_entropy_threshold in entropy is more stringent.
+           lc_dust_threshold : Low complexity threshold - Value must be an
+           integer between 0 and 100. Note a lower lc_entropy_threshold is
+           less stringent with dust) -> structure: parameter
+           "input_reads_ref" of type "data_obj_ref", parameter "output_ws" of
+           type "workspace_name" (Common Types), parameter
+           "output_reads_name" of type "data_obj_name", parameter "lc_method"
+           of String, parameter "lc_entropy_threshold" of Long, parameter
+           "lc_dust_threshold" of Long
         :returns: instance of type "outputReadLibraryExecPRINSEQ" ->
            structure: parameter "output_filtered_ref" of type "data_obj_ref",
            parameter "output_unpaired_fwd_ref" of type "data_obj_ref",

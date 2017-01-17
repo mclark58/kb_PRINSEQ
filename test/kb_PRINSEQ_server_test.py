@@ -156,6 +156,56 @@ class kb_PRINSEQTest(unittest.TestCase):
         print "READS REFERENCE:"+str(cls.se_reads_reference)
         return cls.se_reads_reference
 
+    def test_invalid_threshold_value(self):
+        output_reads_name = "SE_dust_2"
+        lc_method = "dust"
+        lc_threshold = 200
+        exception = ValueError
+        with self.assertRaises(exception) as context:
+            self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref":
+                                                             self.se_reads_reference,
+                                                             "output_ws": self.getWsName(),
+                                                             "output_reads_name": output_reads_name,
+                                                             "lc_method": lc_method,
+                                                             "lc_dust_threshold": lc_threshold})
+            self.assertEqual(("The threshold for {} must be between 0 and 100, it is currently " +
+                              "set to : {}").format(lc_method,
+                                                    lc_threshold),
+                             str(context.exception.message))
+
+    def test_no_entropy_threshold(self):
+        output_reads_name = "SE_entropy_2"
+        lc_method = "entropy"
+        lc_threshold = 200
+        exception = ValueError
+        with self.assertRaises(exception) as context:
+            self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref":
+                                                             self.se_reads_reference,
+                                                             "output_ws": self.getWsName(),
+                                                             "output_reads_name": output_reads_name,
+                                                             "lc_method": lc_method,
+                                                             "lc_dust_threshold": lc_threshold})
+            self.assertEqual(("A low complexity threshold needs to be entered for " +
+                              "{}").format(lc_method),
+                             str(context.exception.message))
+
+    def test_no_dust_threshold(self):
+        # The original input reads file has 12500 reads. This filtered nearly 3000 reads.
+        output_reads_name = "SE_dust_2"
+        lc_method = "dust"
+        lc_threshold = 200
+        exception = ValueError
+        with self.assertRaises(exception) as context:
+            self.getImpl().execReadLibraryPRINSEQ(self.ctx, {"input_reads_ref":
+                                                             self.se_reads_reference,
+                                                             "output_ws": self.getWsName(),
+                                                             "output_reads_name": output_reads_name,
+                                                             "lc_method": lc_method,
+                                                             "lc_entropy_threshold": lc_threshold})
+            self.assertEqual(("A low complexity threshold needs to be entered for " +
+                              "{}").format(lc_method),
+                             str(context.exception.message))
+
     def test_se_dust_partial(self):
         # The original input reads file has 12500 reads. This filtered nearly 3000 reads.
         output_reads_name = "SE_dust_2"
@@ -165,7 +215,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_dust_threshold": lc_threshold})
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
         self.assertEqual(reads_object['read_count'], 9544)
@@ -182,7 +232,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_dust_threshold": lc_threshold})
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
         self.assertEqual(reads_object['read_count'], 12500)
@@ -198,7 +248,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_entropy_threshold": lc_threshold})
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
         self.assertEqual(reads_object['read_count'], 12486)
@@ -214,7 +264,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_entropy_threshold": lc_threshold})
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
         self.assertEqual(reads_object['read_count'], 12500)
@@ -232,7 +282,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                "output_ws": self.getWsName(),
                                                "output_reads_name": output_reads_name,
                                                "lc_method": lc_method,
-                                               "lc_threshold": lc_threshold})
+                                               "lc_entropy_threshold": lc_threshold})
 
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
@@ -253,7 +303,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_dust_threshold": lc_threshold})
         # Check for filtered paired reads object
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
@@ -290,7 +340,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_dust_threshold": lc_threshold})
         # Check filtered paired reads object does not exist
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
@@ -324,7 +374,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_dust_threshold": lc_threshold})
         # Check for filtered paired reads object
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
@@ -362,7 +412,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_entropy_threshold": lc_threshold})
         # Check for filtered paired reads object
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']
@@ -394,7 +444,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_entropy_threshold": lc_threshold})
         # Check filtered paired reads object does not exist
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
@@ -430,7 +480,7 @@ class kb_PRINSEQTest(unittest.TestCase):
                                                          "output_ws": self.getWsName(),
                                                          "output_reads_name": output_reads_name,
                                                          "lc_method": lc_method,
-                                                         "lc_threshold": lc_threshold})
+                                                         "lc_entropy_threshold": lc_threshold})
         # Check for filtered paired reads object
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name]})['data'][0]['data']

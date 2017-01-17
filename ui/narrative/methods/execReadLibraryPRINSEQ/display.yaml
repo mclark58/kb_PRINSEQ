@@ -48,13 +48,20 @@ parameters :
 			Low Complexity Filtering Method (dust or entropy)
 		long-hint : |
 			Low Complexity Filtering Method (dust (low threshold values are stricter) or entropy (high threshold values are stricter))
-	lc_threshold : 
+	lc_entropy_threshold : 
 		ui-name : |
-			Low Complexity Threshold (int from 0 to 100)
+			Low Complexity Entropy Threshold (int from 0 to 100)
 		short-hint : |
-			Low Complexity Threshold (int from 0 to 100)
+			Low Complexity Entropy Threshold (int from 0 to 100), recommended default value is 70.
 		long-hint : |
-			Low Complexity Threshold (int from 0 to 100). In dust a low threshold value is stricter. In entropy a high threshold value is stricter.
+			Low Complexity Entropy Threshold (int from 0 to 100), recommended default value is 70. In entropy a high threshold value is stricter.
+	lc_dust_threshold : 
+		ui-name : |
+			OR Low Complexity Dust Threshold (int from 0 to 100)
+		short-hint : |
+			Low Complexity Dust Threshold (int from 0 to 100), recommended default value is 7.
+		long-hint : |
+			Low Complexity Dust Threshold (int from 0 to 100), recommended default value is 7. In dust a low threshold value is stricter.
 
 # Desc
 #

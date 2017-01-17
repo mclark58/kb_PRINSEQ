@@ -60,8 +60,21 @@
 				}
 		},
 		{
-			"id": "lc_threshold",
-			"optional": false,
+			"id": "lc_entropy_threshold",
+			"optional": true,
+			"advanced": false,
+			"allow_multiple": false,
+			"default_values": [ "" ],
+			"field_type": "text",
+			"text_options": {
+				"validate_as": "int",
+                "min_int": 0,
+                "max_int": 100
+			}
+		},
+		{
+			"id": "lc_dust_threshold",
+			"optional": true,
 			"advanced": false,
 			"allow_multiple": false,
 			"default_values": [ "" ],
@@ -72,6 +85,7 @@
                 "max_int": 100
 			}
 		}
+
 	],
 	"behavior": {
 		"service-mapping": {
@@ -99,8 +113,12 @@
 					"target_property": "lc_method"
 				},
 				{
-					"input_parameter": "lc_threshold",
-					"target_property": "lc_threshold"
+					"input_parameter": "lc_entropy_threshold",
+					"target_property": "lc_entropy_threshold"
+				},
+				{
+					"input_parameter": "lc_dust_threshold",
+					"target_property": "lc_dust_threshold"
 				}
 			],
 			"output_mapping": [

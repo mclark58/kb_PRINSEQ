@@ -28,16 +28,18 @@ module kb_PRINSEQ {
         output_reads_name : obj_name to create
 
         lc_method : Low complexity method - value must be "dust" or "entropy"
-        lc_threshold : Low complexity threshold - Value must be an integer between 0 and 100. 
-                             Note a higher lc_threshold in entropy is more stringent. 
-                             Note a lower lc_threshold is less stringent with dust
+        lc_entropy_threshold : Low complexity threshold - Value must be an integer between 0 and 100. 
+                               Note a higher lc_entropy_threshold in entropy is more stringent. 
+        lc_dust_threshold : Low complexity threshold - Value must be an integer between 0 and 100.                        
+                             Note a lower lc_entropy_threshold is less stringent with dust
     */
     typedef structure {
         data_obj_ref input_reads_ref;
         workspace_name output_ws;
         data_obj_name output_reads_name;
         string lc_method;
-        int lc_threshold; 
+        int lc_entropy_threshold;
+        int lc_dust_threshold; 
     } inputPRINSEQ;
 
     typedef structure {
