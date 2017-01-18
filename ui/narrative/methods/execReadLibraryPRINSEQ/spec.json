@@ -69,7 +69,8 @@
 			"text_options": {
 				"validate_as": "int",
                 "min_int": 0,
-                "max_int": 100
+                "max_int": 100,
+				"default":70
 			}
 		},
 		{
@@ -82,7 +83,8 @@
 			"text_options": {
 				"validate_as": "int",
                 "min_int": 0,
-                "max_int": 100
+                "max_int": 100,
+				"default":7
 			}
 		}
 
