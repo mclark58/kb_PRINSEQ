@@ -64,13 +64,12 @@
 			"optional": true,
 			"advanced": false,
 			"allow_multiple": false,
-			"default_values": [ "" ],
+			"default_values": [ "70" ],
 			"field_type": "text",
 			"text_options": {
 				"validate_as": "int",
                 "min_int": 0,
-                "max_int": 100,
-				"default":70
+                "max_int": 100
 			}
 		},
 		{
@@ -78,13 +77,12 @@
 			"optional": true,
 			"advanced": false,
 			"allow_multiple": false,
-			"default_values": [ "" ],
+			"default_values": [ "7" ],
 			"field_type": "text",
 			"text_options": {
 				"validate_as": "int",
                 "min_int": 0,
-                "max_int": 100,
-				"default":7
+                "max_int": 100
 			}
 		}
 
