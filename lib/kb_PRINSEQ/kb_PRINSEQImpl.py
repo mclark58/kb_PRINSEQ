@@ -44,7 +44,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/jkbaumohl/kb_PRINSEQ.git"
-    GIT_COMMIT_HASH = "a2c3d3ebcd9b76b0abc22641eb19a8373e84b64b"
+    GIT_COMMIT_HASH = "3c2c715a3ed988a6aeab3b715ded5fad3f428245"
 
     #BEGIN_CLASS_HEADER
     def _sanitize_file_name(self, file_name):
