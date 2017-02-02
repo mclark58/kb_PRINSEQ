@@ -6,7 +6,7 @@ tooltip: |
 	Filter out low complexity paired- or single-end reads with PRINSEQ.
 screenshots: []
 
-icon: prinseq_logo1.png
+icon: prinseq-pink.png
 
 #
 # define a set of similar methods that might be useful to the user
