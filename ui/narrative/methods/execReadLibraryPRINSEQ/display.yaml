@@ -1,7 +1,7 @@
 #
 #  define display information
 #
-name: PRINSEQ - Low complexity read filtering
+name: PRINSEQ - Filter Out Low-Complexity Reads
 tooltip: |
 	Filter out low complexity paired- or single-end reads with PRINSEQ.
 screenshots: []
