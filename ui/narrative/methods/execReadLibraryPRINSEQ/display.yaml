@@ -74,8 +74,8 @@ publications :
         display-text : |
             'Schmieder R and Edwards R: Quality control and preprocessing of metagenomic datasets. Bioinformatics 2011, 27:863-864.'
         link: http://www.ncbi.nlm.nih.gov/pubmed/21278185
+        
+PRINSEQ source: 
     -
-    display-text : |
-            PRINSEQ source: 
-    	link: http://prinseq.sourceforge.net/
-
+        display-text : |
+        link: http://prinseq.sourceforge.net/
