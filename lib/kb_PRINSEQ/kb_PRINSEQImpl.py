@@ -42,9 +42,9 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.1"
-    GIT_URL = "https://github.com/jkbaumohl/kb_PRINSEQ.git"
-    GIT_COMMIT_HASH = "3c2c715a3ed988a6aeab3b715ded5fad3f428245"
+    VERSION = "0.0.3"
+    GIT_URL = "https://github.com/rsutormin/kb_PRINSEQ"
+    GIT_COMMIT_HASH = "0772a08873f50b5e5b71b39d5aa076f46a3962fb"
 
     #BEGIN_CLASS_HEADER
     def _sanitize_file_name(self, file_name):
