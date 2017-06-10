@@ -9,7 +9,7 @@ MAINTAINER KBase Developer
 RUN cd /opt \
     && mkdir lib \
     && cd lib \
-    && wget "https://sourceforge.net/projects/prinseq/files/standalone/prinseq-lite-0.20.4.tar.gz" \
+    && wget -o prinseq-lite-0.20.4.tar.gz 'https://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fprinseq%2Ffiles%2Fstandalone%2Fprinseq-lite-0.20.4.tar.gz%2Fdownload&ts=1497050557&use_mirror=gigenet' \
     && tar -zxvf prinseq-lite-0.20.4.tar.gz \
     && cd prinseq-lite-0.20.4 \
     && chmod +x prinseq-lite.pl \
