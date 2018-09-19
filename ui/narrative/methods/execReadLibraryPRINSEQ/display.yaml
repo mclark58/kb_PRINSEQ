@@ -48,14 +48,14 @@ parameters :
 			Low Complexity Filtering Method (dust or entropy)
 		long-hint : |
 			Low Complexity Filtering Method (dust (low threshold values are stricter) or entropy (high threshold values are stricter))
-	lc_entropy_threshold : 
+	lc_entropy_threshold :
 		ui-name : |
 			Entropy Threshold
 		short-hint : |
 			Low Complexity Entropy Threshold (int from 0 to 100), recommended default value is 70.
 		long-hint : |
 			Low Complexity Entropy Threshold (int from 0 to 100), recommended default value is 70. In entropy a higher threshold value is stricter.
-	lc_dust_threshold : 
+	lc_dust_threshold :
 		ui-name : |
 			OR Dust Threshold
 		short-hint : |
@@ -72,8 +72,8 @@ publications :
     -
         pmid: 21278185
         display-text : |
-            'Schmieder R and Edwards R: Quality control and preprocessing of metagenomic datasets. Bioinformatics 2011, 27:863-864.'
+            Schmieder R, Edwards R. Quality control and preprocessing of metagenomic datasets. Bioinformatics. 2011;27: 863–864. doi:10.1093/bioinformatics/btr026
         link: http://www.ncbi.nlm.nih.gov/pubmed/21278185
     -
-        display-text : "PRINSEQ source:"
+        display-text : "PRINSEQ source: "
         link: http://prinseq.sourceforge.net/
