@@ -1,28 +1,20 @@
 # -*- coding: utf-8 -*-
-import unittest
 import os  # noqa: F401
-import json  # noqa: F401
-import time
-import requests
 import shutil
-
+import time
+import unittest
+from configparser import ConfigParser  # py3
 from os import environ
-try:
-    from ConfigParser import ConfigParser  # py2
-except:
-    from configparser import ConfigParser  # py3
 
-from pprint import pprint  # noqa: F401
+import requests
 
-# from biokbase.workspace.client import ServerError as WorkspaceError
-from biokbase.workspace.client import Workspace as workspaceService
-# from Workspace.WorkspaceClient import Workspace
-from ReadsUtils.ReadsUtilsClient import ReadsUtils
+from installed_clients.DataFileUtilClient import DataFileUtil
+from installed_clients.ReadsUtilsClient import ReadsUtils
+from installed_clients.WorkspaceClient import Workspace as workspaceService
+from installed_clients.baseclient import ServerError as DFUError
+from kb_PRINSEQ.authclient import KBaseAuth as _KBaseAuth
 from kb_PRINSEQ.kb_PRINSEQImpl import kb_PRINSEQ
 from kb_PRINSEQ.kb_PRINSEQServer import MethodContext
-from DataFileUtil.baseclient import ServerError as DFUError
-from DataFileUtil.DataFileUtilClient import DataFileUtil
-from kb_PRINSEQ.authclient import KBaseAuth as _KBaseAuth
 
 
 class kb_PRINSEQTest(unittest.TestCase):
@@ -68,14 +60,14 @@ class kb_PRINSEQTest(unittest.TestCase):
         cls.dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=cls.token)
         cls.nodes_to_delete = []
         cls.nodes_to_delete.extend(cls.upload_test_reads())
-        print "NODES TO DELETE: {}".format(str(cls.nodes_to_delete))
+        print("NODES TO DELETE: {}".format(str(cls.nodes_to_delete)))
         print('\n\n=============== Starting tests ==================')
 
     @classmethod
     def tearDownClass(cls):
         if cls.getWsName():
             cls.wsClient.delete_workspace({'workspace': cls.getWsName()})
-            print('Test workspace {} was deleted'.format(str(cls.getWsName())))
+            print(('Test workspace {} was deleted'.format(str(cls.getWsName()))))
         if hasattr(cls, 'nodes_to_delete'):
             for node in cls.nodes_to_delete:
                 cls.delete_shock_node(node)
@@ -108,7 +100,7 @@ class kb_PRINSEQTest(unittest.TestCase):
         revtf = 'small_reverse.fq'
         fwdtarget = os.path.join(cls.scratch, fwdtf)
         revtarget = os.path.join(cls.scratch, revtf)
-        print "CWD: "+str(os.getcwd())
+        print("CWD: "+str(os.getcwd()))
         shutil.copy('/kb/module/test/data/' + fwdtf, fwdtarget)
         shutil.copy('/kb/module/test/data/' + revtf, revtarget)
 
@@ -155,7 +147,7 @@ class kb_PRINSEQTest(unittest.TestCase):
 
     @classmethod
     def getSeRef(cls):
-        print "READS REFERENCE:"+str(cls.se_reads_reference)
+        print("READS REFERENCE:"+str(cls.se_reads_reference))
         return cls.se_reads_reference
 
     def test_invalid_threshold_value(self):
@@ -289,10 +281,8 @@ class kb_PRINSEQTest(unittest.TestCase):
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + output_reads_name]})
-        print "ERROR:{}:".format(str(context.exception.message))
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(output_reads_name)
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        expected_error_prefix = f"No object with name {output_reads_name} exists in workspace"
+        self.assertIn(expected_error_prefix, str(context.exception))
 
     def test_pe_dust_partial(self):
         # Three new objects made
@@ -347,10 +337,8 @@ class kb_PRINSEQTest(unittest.TestCase):
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + output_reads_name]})
-        print "ERROR:{}:".format(str(context.exception.message))
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(output_reads_name)
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        expected_error_prefix = f"No object with name {output_reads_name} exists in workspace"
+        self.assertIn(expected_error_prefix, str(context.exception))
         # Check fwd singletons object
         reads_object = self.dfu.get_objects(
             {'object_refs': [self.getWsName() + '/' + output_reads_name +
@@ -385,23 +373,21 @@ class kb_PRINSEQTest(unittest.TestCase):
         self.delete_shock_node(node)
         # Check fwd singletons object does not exist
         temp_object_name = output_reads_name + "_fwd_singletons"
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(temp_object_name)
+        expected_error_prefix = f"No object with name {temp_object_name} exists in workspace"
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + temp_object_name]})
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        self.assertIn(expected_error_prefix, str(context.exception))
         # Check rev singletons object does not exist
         temp_object_name = output_reads_name + "_rev_singletons"
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(temp_object_name)
+        expected_error_prefix = f"No object with name {temp_object_name} exists in workspace"
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + temp_object_name]})
         # print "ERROR:{}:".format(str(context.exception.message))
         # expected_error_prefix = \
         #    "No object with name {} exists in workspace".format(temp_object_name)
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        self.assertIn(expected_error_prefix, str(context.exception))
 
     def test_pe_entropy_partial(self):
         # Two new objects made (the reverse singleton has no reads, no object made)
@@ -430,12 +416,11 @@ class kb_PRINSEQTest(unittest.TestCase):
         self.delete_shock_node(node)
         # Check rev singletons object does not exist
         temp_object_name = output_reads_name + "_rev_singletons"
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(temp_object_name)
+        expected_error_prefix = f"No object with name {temp_object_name} exists in workspace"
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + temp_object_name]})
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        self.assertIn(expected_error_prefix, str(context.exception))
 
     def test_pe_entropy_strict(self):
         # No new objects made
@@ -451,26 +436,22 @@ class kb_PRINSEQTest(unittest.TestCase):
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + output_reads_name]})
-        print "ERROR:{}:".format(str(context.exception.message))
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(output_reads_name)
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        expected_error_prefix = f"No object with name {output_reads_name} exists in workspace"
+        self.assertIn(expected_error_prefix, str(context.exception))
         # Check fwd singletons object does not exist
         temp_object_name = output_reads_name + "_fwd_singletons"
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(temp_object_name)
+        expected_error_prefix = f"No object with name {temp_object_name} exists in workspace"
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + temp_object_name]})
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        self.assertIn(expected_error_prefix, str(context.exception))
         # Check rev singletons object does not exist
         temp_object_name = output_reads_name + "_rev_singletons"
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(temp_object_name)
+        expected_error_prefix = f"No object with name {temp_object_name} exists in workspace"
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + temp_object_name]})
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        self.assertIn(expected_error_prefix, str(context.exception))
 
     def test_pe_entropy_loose(self):
         # Only 1 new objects made since no reads filtered.
@@ -494,17 +475,12 @@ class kb_PRINSEQTest(unittest.TestCase):
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + temp_object_name]})
-        print "ERROR:{}:".format(str(context.exception.message))
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(temp_object_name)
-        print "Expected Error:{}".format(temp_object_name)
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        expected_error_prefix = f"No object with name {temp_object_name} exists in workspace"
+        self.assertIn(expected_error_prefix, str(context.exception))
         # Check rev singletons object does not exist
         temp_object_name = output_reads_name + "_rev_singletons"
         with self.assertRaises(DFUError) as context:
             self.dfu.get_objects(
                 {'object_refs': [self.getWsName() + '/' + temp_object_name]})
-        print "ERROR:{}:".format(str(context.exception.message))
-        expected_error_prefix = \
-            "No object with name {} exists in workspace".format(temp_object_name)
-        self.assertTrue(str(context.exception.message).startswith(expected_error_prefix))
+        expected_error_prefix = f"No object with name {temp_object_name} exists in workspace"
+        self.assertIn(expected_error_prefix, str(context.exception))

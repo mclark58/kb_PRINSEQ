@@ -1,23 +1,16 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
-import sys
-from biokbase.workspace.client import Workspace as workspaceService
-#from Workspace.baseclient import ServerError as WorkspaceError
-import requests
-import subprocess
 import os
-import tempfile
-import shutil
 import re
 import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
 
-## SDK Utils
-#from ReadsUtils.ReadsUtilsClient import ReadsUtilsClient  # FIX
-from ReadsUtils.ReadsUtilsClient import ReadsUtils
-#from SetAPI.SetAPIClient import SetAPI
-from KBaseReport.KBaseReportClient import KBaseReport
-
-requests.packages.urllib3.disable_warnings()
+from installed_clients.KBaseReportClient import KBaseReport
+from installed_clients.ReadsUtilsClient import ReadsUtils
+from installed_clients.WorkspaceClient import Workspace as workspaceService
 #END_HEADER
 
 
@@ -42,9 +35,9 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.3"
-    GIT_URL = "https://github.com/rsutormin/kb_PRINSEQ"
-    GIT_COMMIT_HASH = "0772a08873f50b5e5b71b39d5aa076f46a3962fb"
+    VERSION = "0.0.5"
+    GIT_URL = "https://github.com/kbaseapps/kb_PRINSEQ.git"
+    GIT_COMMIT_HASH = "df8a650a7b8e3f57eaea120e4bc58d63ca76ce23"
 
     #BEGIN_CLASS_HEADER
     def _sanitize_file_name(self, file_name):
@@ -179,7 +172,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
         try:
             # object_info tuple
             [OBJID_I, NAME_I, TYPE_I, SAVE_DATE_I, VERSION_I, SAVED_BY_I, WSID_I,
-             WORKSPACE_I, CHSUM_I, SIZE_I, META_I] = range(11)
+             WORKSPACE_I, CHSUM_I, SIZE_I, META_I] = list(range(11))
 
             input_reads_obj_info = wsClient.get_object_info_new({'objects':
                                                                  [{'ref':
@@ -269,13 +262,14 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                               input_files_info["fastq2_file_path"],
                                               input_params['lc_method'],
                                               lc_threshold)
-            print "Command to be run : " + cmd
+            print("Command to be run : " + cmd)
             args = shlex.split(cmd)
             perl_script = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output = perl_script.communicate()
             found_results = False
             file_names_dict = dict()
             for element in output:
+                element = element.decode()
                 if "Input and filter stats:" in element:
                     found_results = True
                     element_parts = element.split("Input and filter stats:")
@@ -290,7 +284,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
 
                     for read_filename in read_files_list:
                         file_direction = None
-                        print "Read File : {}".format(read_filename)
+                        print(f"Read File : {read_filename}")
                         # determine if forward(fastq) or reverse(fastq2) file
                         if input_files_info["fastq_filename"] in read_filename:
                             file_direction = "fwd"
@@ -298,21 +292,18 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                             file_direction = "rev"
                         if file_direction is not None:
                             # determine good singleton or good part of a pair.
-                            print "TEST: {}_prinseq_good_".format(
-                                input_files_info["fastq_filename"])
-                            if ("{}_prinseq_good_singletons".format(
-                                    input_files_info["fastq_filename"])
+                            print(f"TEST: {input_files_info['fastq_filename']}_prinseq_good_")
+                            if (f"{input_files_info['fastq_filename']}_prinseq_good_singletons"
                                     in read_filename or
-                                    "{}_prinseq_good_singletons".format(
-                                        input_files_info["fastq2_filename"])
+                                    f"{input_files_info['fastq2_filename']}_prinseq_good_singletons"
                                     in read_filename):
                                 # Unpaired singletons that need to be
                                 # saved as a new single end reads object
-                                file_names_dict["{}_good_singletons".format(file_direction)] = \
+                                file_names_dict[f"{file_direction}_good_singletons"] = \
                                     os.path.join(export_dir, read_filename)
-                            elif ("{}_prinseq_good_".format(input_files_info["fastq_filename"])
+                            elif (f"{input_files_info['fastq_filename']}_prinseq_good_"
                                   in read_filename or
-                                  "{}_prinseq_good_".format(input_files_info["fastq2_filename"])
+                                  f"{input_files_info['fastq2_filename']}_prinseq_good_"
                                   in read_filename):
                                 file_names_dict["{}_good_pair".format(file_direction)] = \
                                     os.path.join(export_dir, read_filename)
@@ -335,7 +326,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                                              returnVal['filtered_paired_end_ref'],
                                                              'description':
                                                              'Filtered Paired End Reads'})
-                        print "REFERENCE : " + str(returnVal['filtered_paired_end_ref'])
+                        print("REFERENCE : " + str(returnVal['filtered_paired_end_ref']))
                     else:
                         reportObj['text_message'] += \
                             "\n\nNo good matching pairs passed low complexity filtering.\n" + \
@@ -355,8 +346,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                         reportObj['objects_created'].append(
                             {'ref': returnVal['output_filtered_fwd_unpaired_end_ref'],
                              'description': 'Filtered Forward Unpaired End Reads'})
-                        print "REFERENCE : " + \
-                            str(returnVal['output_filtered_fwd_unpaired_end_ref'])
+                        print("REFERENCE : " + \
+                            str(returnVal['output_filtered_fwd_unpaired_end_ref']))
                     if 'rev_good_singletons' in file_names_dict:
                         self._log(None, 'Saving new Reverse Unpaired Reads')
                         rev_object_name = "{}_rev_singletons".format(new_object_name)
@@ -372,8 +363,8 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                         reportObj['objects_created'].append(
                             {'ref': returnVal['output_filtered_rev_unpaired_end_ref'],
                              'description': 'Filtered Reverse Unpaired End Reads'})
-                        print "REFERENCE : " + \
-                            str(returnVal['output_filtered_rev_unpaired_end_ref'])
+                        print("REFERENCE : " + \
+                            str(returnVal['output_filtered_rev_unpaired_end_ref']))
                     if len(reportObj['objects_created']) > 0:
                         reportObj['text_message'] += "\nOBJECTS CREATED :\n"
                         for obj in reportObj['objects_created']:
@@ -384,9 +375,9 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                             "\nFiltering filtered out all reads. No objects made.\n"
             if not found_results:
                 raise Exception('Unable to execute PRINSEQ, Error: {}'.format(str(output)))
-            print "FILES DICT : {}".format(str(file_names_dict))
-            print "REPORT OBJECT :"
-            print str(reportObj)
+            print("FILES DICT : {}".format(str(file_names_dict)))
+            print("REPORT OBJECT :")
+            print(str(reportObj))
 
         elif read_type == 'SE':
             # Download reads Libs to FASTQ files
@@ -404,16 +395,17 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                    "-lc_threshold {}").format(fastq_file_path,
                                               input_params['lc_method'],
                                               lc_threshold)
-            print "Command to be run : " + cmd
+            print("Command to be run : " + cmd)
             args = shlex.split(cmd)
-            print "ARGS:  " + str(args)
+            print("ARGS:  " + str(args))
             perl_script = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output = perl_script.communicate()
-            print "OUTPUT: " + str(output)
+            print("OUTPUT: " + str(output))
             found_results = False
             found_se_filtered_file = False
             file_names_dict = dict()
             for element in output:
+                element = element.decode()
                 if "Input and filter stats:" in element:
                     found_results = True
                     element_parts = element.split("Input and filter stats:")
@@ -423,11 +415,11 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                     read_files_list = os.listdir(export_dir)
 
                     for read_filename in read_files_list:
-                        print "Early Read File : {}".format(read_filename)
+                        print("Early Read File : {}".format(read_filename))
 
                     for read_filename in read_files_list:
-                        print "Read File : {}".format(read_filename)
-                        if ("{}_prinseq_good_".format(fastq_filename) in read_filename):
+                        print(f"Read File : {read_filename}")
+                        if f"{fastq_filename}_prinseq_good_" in read_filename:
                             #Found Good file. Save the Reads objects
                             self._log(None, 'Saving Filtered Single End Reads')
                             returnVal['output_filtered_single_end_ref'] = \
@@ -443,7 +435,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                             reportObj['objects_created'].append(
                                 {'ref': returnVal['output_filtered_single_end_ref'],
                                  'description': 'Filtered Single End Reads'})
-                            print "REFERENCE : " + str(returnVal['output_filtered_single_end_ref'])
+                            print("REFERENCE : " + str(returnVal['output_filtered_single_end_ref']))
                             found_se_filtered_file = True
                             break
             if not found_se_filtered_file:
@@ -452,9 +444,9 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                     "Consider loosening the threshold value.\n"
             if not found_results:
                 raise Exception('Unable to execute PRINSEQ, Error: {}'.format(str(output)))
-            print "FILES DICT : {}".format(str(file_names_dict))
-            print "REPORT OBJECT :"
-            print str(reportObj)
+            print(f"FILES DICT : {file_names_dict}")
+            print("REPORT OBJECT :")
+            print(str(reportObj))
 
         # save report object
         #
