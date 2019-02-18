@@ -334,8 +334,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                         reportObj['objects_created'].append({'ref':
                                                              returnVal['filtered_paired_end_ref'],
                                                              'description':
-                                                             'Filtered Paired End Reads',
-                                                             'object_name': new_object_name})
+                                                             'Filtered Paired End Reads'})
                         print "REFERENCE : " + str(returnVal['filtered_paired_end_ref'])
                     else:
                         reportObj['text_message'] += \
@@ -355,8 +354,7 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                                            )['obj_ref']
                         reportObj['objects_created'].append(
                             {'ref': returnVal['output_filtered_fwd_unpaired_end_ref'],
-                             'description': 'Filtered Forward Unpaired End Reads',
-                             'object_name': fwd_object_name})
+                             'description': 'Filtered Forward Unpaired End Reads'})
                         print "REFERENCE : " + \
                             str(returnVal['output_filtered_fwd_unpaired_end_ref'])
                     if 'rev_good_singletons' in file_names_dict:
@@ -373,14 +371,13 @@ execReadLibraryPRINSEQ() to run PRINSEQ low complexity filtering on a single Rea
                                                            )['obj_ref']
                         reportObj['objects_created'].append(
                             {'ref': returnVal['output_filtered_rev_unpaired_end_ref'],
-                             'description': 'Filtered Reverse Unpaired End Reads',
-                             'object_name': rev_object_name})
+                             'description': 'Filtered Reverse Unpaired End Reads'})
                         print "REFERENCE : " + \
                             str(returnVal['output_filtered_rev_unpaired_end_ref'])
                     if len(reportObj['objects_created']) > 0:
                         reportObj['text_message'] += "\nOBJECTS CREATED :\n"
                         for obj in reportObj['objects_created']:
-                            reportObj['text_message'] += "{} : {}\n".format(obj['object_name'],
+                            reportObj['text_message'] += "{} : {}\n".format(obj['ref'],
                                                                             obj['description'])
                     else:
                         reportObj['text_message'] += \
