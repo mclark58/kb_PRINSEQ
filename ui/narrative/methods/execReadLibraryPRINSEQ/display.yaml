@@ -1,9 +1,9 @@
 #
 #  define display information
 #
-name: PRINSEQ - Filter Out Low-Complexity Reads
+name: Filter Out Low-Complexity Reads with PRINSEQ - v0.20.4
 tooltip: |
-	Filter out low complexity paired- or single-end reads with PRINSEQ.
+	Filter out low-complexity paired- or single-end reads with PRINSEQ.
 screenshots: []
 
 icon: prinseq-pink_360.png
@@ -16,7 +16,7 @@ suggestions:
 		related:
 			[]
 		next:
-			[]
+			[kb_MaSuRCA/run_masurca_assembler, AssemblyRAST/run_ray, kb_SPAdes/run_SPAdes, AssemblyRAST/run_kiki, kb_IDBA/run_idba_ud, kb_SPAdes/run_hybridSPAdes, AssemblyRAST/run_arast, AssemblyRAST/run_a6, MEGAHIT/run_megahit, kb_trimmomatic/run_trimmomatic]
 	methods:
 		related:
 			[]
@@ -29,44 +29,59 @@ suggestions:
 parameters :
 	input_reads_ref :
 		ui-name : |
-			Read library
+			Reads Library
 		short-hint : |
-			The read library to examine
-		long-hint  : |
-			The read library (Single or Paired End) on which you want to perform PRINSEQ low complexity filtering
+			The Reads Library (Single- or Paired-End) on which you want to perform PRINSEQ low-complexity filtering.
 	output_reads_name :
 		ui-name : |
-			Output library name
+			Output ReadsLibrary Name
 		short-hint : |
-			Base name for output read library object
-		long-hint : |
-			Base name for output read library object
+			The base name for the output ReadsLibrary object.
 	lc_method :
 		ui-name : |
 			Filtering Method
 		short-hint : |
-			Low Complexity Filtering Method (dust or entropy)
-		long-hint : |
-			Low Complexity Filtering Method (dust (low threshold values are stricter) or entropy (high threshold values are stricter))
+			Select either Low Complexity Filtering Method (dust; low threshold values are stricter) or Entropy (high threshold values are stricter).
 	lc_entropy_threshold :
 		ui-name : |
 			Entropy Threshold
 		short-hint : |
-			Low Complexity Entropy Threshold (int from 0 to 100), recommended default value is 70.
-		long-hint : |
-			Low Complexity Entropy Threshold (int from 0 to 100), recommended default value is 70. In entropy a higher threshold value is stricter.
+			The Low Complexity Entropy Threshold (from 0 to 100); recommended default value is 70. In Entropy, a higher threshold value is stricter.
 	lc_dust_threshold :
 		ui-name : |
 			OR Dust Threshold
 		short-hint : |
-			Low Complexity Dust Threshold (int from 0 to 100), recommended default value is 7.
-		long-hint : |
-			Low Complexity Dust Threshold (int from 0 to 100), recommended default value is 7. In dust a lower threshold value is stricter.
+			The Low Complexity Dust Threshold (from 0 to 100); recommended default value is 7. In Dust, a lower threshold value is stricter.
 
 # Desc
 #
 description : |
-	<p>PRINSEQ filters low-complexity reads from single or paired-end read libraries.
+	<p>This App filters low-complexity reads from single- or paired-end read libraries using PRINSEQ. There are two filtering methods to choose from (i) Dust and (ii) Entropy. Note that the Entropy threshold becomes more strict as the threshold value increases, whereas the Dust threshold becomes more strict as the threshold decreases. The threshold value field used is determined by the Filtering Method selected.</p>
+
+  <p>If the input reads object is a SingleEndLibrary, the resulting object will be a filtered SingleEndLibrary object. If the input reads object is a PairedEndLibrary, however, there is the potential for the following 3 objects to be made:
+    <ul>
+      <li>A PairedEndLibrary object in which both the forward (FWD) and reverse (REV) reads passed the complexity filters.</li>
+      <li>A FWD SingleEndLibrary in which the paired REV reads failed complexity filtering.<li>
+      <li>A REV SingleEndLibrary in which the paired FWD reads failed complexity filtering.<li>
+    </ul>
+  </p>
+
+  <p><b><i>Output Report:</i></b>
+  <p>The output first lists the objects created within KBase as a result of running PRINSEQ.</p>
+  <p>The next section of the output details summary statistics of PRINSEQ. Note if the input was a PairedEndLibrary, PRINSEQ internally breaks up that object into two separate input files, one for each direction. As a result, more statistical information is generated for PairedEndLibraries. The summary stats can potentially include:
+    <ul>
+	   <li>Input sequences (from 1 or 2 files)</li>
+     <li>Input bases (from 1 or 2 files)</li>
+     <li>Input mean length (from 1 or 2 files)</li>
+     <li>Input sequences (from 1 or 2 files)</li>
+     <li>Good sequences (Uncategorized if SingleEndLibrary input, Pairs or Singletons for PairedEndLibrary input</li>
+     <li>Good bases (Uncategorized if SingleEndLibrary input, Pairs or Singletons for PairedEndLibrary input</li>
+     <li>Good mean length (Uncategorized if SingleEndLibrary input, Pairs or Singletons for PairedEndLibrary input</li>
+     <li>Bad sequences (Uncategorized if SingleEndLibrary input, File identifier for PairedEndLibrary input</li>
+     <li>Bad bases  (Uncategorized if SingleEndLibrary input, File identifier for PairedEndLibrary input</li>
+     <li>Bad mean length (Uncategorized if SingleEndLibrary input, File identifier for PairedEndLibrary input</li>
+    </ul>
+  </p>
 
 publications :
     -
