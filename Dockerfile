@@ -5,7 +5,9 @@ MAINTAINER KBase Developer
 # Insert apt-get instructions here to install
 # any required dependencies for your module.
 
-RUN apt-get install -y wget
+RUN apt-get update -y \
+    && apt-get install -y wget
+
 RUN cd /opt \
     && mkdir lib \
     && cd lib \
