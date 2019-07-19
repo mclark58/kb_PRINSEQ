@@ -61,8 +61,8 @@ description : |
   <p>If the input reads object is a SingleEndLibrary, the resulting object will be a filtered SingleEndLibrary object. If the input reads object is a PairedEndLibrary, however, there is the potential for the following 3 objects to be made:
     <ul>
       <li>A PairedEndLibrary object in which both the forward (FWD) and reverse (REV) reads passed the complexity filters.</li>
-      <li>A FWD SingleEndLibrary in which the paired REV reads failed complexity filtering.<li>
-      <li>A REV SingleEndLibrary in which the paired FWD reads failed complexity filtering.<li>
+      <li>A FWD SingleEndLibrary in which the paired REV reads failed complexity filtering.</li>
+      <li>A REV SingleEndLibrary in which the paired FWD reads failed complexity filtering.</li>
     </ul>
   </p>
 
